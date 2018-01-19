@@ -30,29 +30,32 @@ class WordRollout(object):
             discriminator: D
         """
         rewards = []
-        for i in range(mc_num):
-            # ~for t in [0,T-1] 
-            for t in range(1, self.rep_seq_length): 
-                # Ask gen to output a sentence using the first t tokens
-                # of the complete sentence input_x
-                # TODO: Generate sentences with self.generator
-                
-                # Ask disc to reward these sentences
-                disc_proba=discriminator.get_rewards(complete_sentence)
-                disc_reward=np.array([item[1] for item in disc_proba])
-                if i == 0:
-                    rewards.append(disc_reward)
-                else:
-                    rewards[t - 1] += disc_reward
-            # At this point, for t in [0,T-1], rewards[t] = \sum_i R_D(y_{0:t})
-
-            # Reward for the complete sentence
-            disc_proba=discriminator.get_rewards(input_x)
-            disc_reward = np.array([item[1] for item in disc_proba])
+        # ~for t in [0,T-1] 
+        for t in range(1, self.rep_seq_length): 
+            # Make batch of size mc_steps of sentences with the first t tokens
+            # of input_x and the rest to 0
+            gen_input_t = np.zeros([mc_steps, req_seq_length])
+            gen_input_t[:,0:t] = np.tile(input_x[0:t], (mc_steps,1))
+            # Ask gen to output a sentence using the first t tokens
+            # of the complete sentence input_x
+            complete_sentence = generator.get_sentence(gen_input_t)
+            
+            # Ask disc to reward these sentences
+            disc_proba=discriminator.get_rewards(complete_sentence)
+            disc_reward=np.array([item[1] for item in disc_proba])
             if i == 0:
                 rewards.append(disc_reward)
             else:
-                rewards[19] += disc_reward
+                rewards[t - 1] += disc_reward
+        # At this point, for t in [0,T-1], rewards[t] = \sum_i R_D(y_{0:t})
+
+        # Reward for the complete sentence
+        disc_proba=discriminator.get_rewards(input_x)
+        disc_reward = np.array([item[1] for item in disc_proba])
+        if i == 0:
+            rewards.append(disc_reward)
+        else:
+            rewards[19] += disc_reward
 
         # At this point, for t in [0,T-1], rewards[t] = \sum_{rollout} R_D(y_{0:t})
         # reward[T] = R_D(y_{0:T})
