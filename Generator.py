@@ -173,7 +173,12 @@ class Generator(object):
         self.g_updates = g_opt.apply_gradients(zip(self.g_grad, self.params))
 
 
-    def generate(self, sess, feed_dict):
+    def generate(self, sess, X):
+        """
+        Returns a sentence output by generator given history
+        Args: 
+            X: history
+        """
         outputs = sess.run(self.gen_x, feed_dict=feed_dict)
         return outputs
 
@@ -181,12 +186,28 @@ class Generator(object):
         sess.run(self.embedding_init)
         return
 
-    def pretrain_step(self, sess, feed_dict):
+    def pretrain_step(self, sess, X, Y):
+        """
+        Run seq2seq training step
+        Args:
+            X: dialogue history
+            Y: expected sentence
+        """
+        feed_dict = {enc_input[t]: X[t] for t in rqnge(seq_length)}
+        feed_dict.update({labels[t]: Y[t] for t in range(rep_seq_length)})
         outputs = sess.run([self.pretrain_updates, self.pretrain_loss], feed_dict=feed_dict)
         return outputs
 
     def adv_update(sess, sentence, word_probas, rewards, baseline):
-        feed_dict = {self.labels= y, self.word_probas: word_probas, self.baseline: baseline, self.rewards = rewards}
+        """
+        Run adversarial training step
+        Args:
+            sentence: sentence output by generator
+            word_probas: proba of each word in the generate sentence
+            baseline: baseline[t] = baseline(sentence[0:t])
+            rewards: rewards[t] = rewards(sentence[0:t])
+        """
+        feed_dict = {self.labels= sentence, self.word_probas: word_probas, self.baseline: baseline, self.rewards = rewards}
         sess.run(self.g_updates, feed_dict)
 
     def init_matrix(self, shape):
