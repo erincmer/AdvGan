@@ -1,7 +1,11 @@
+import numpy
 import tensorflow as tf
 
 from tensorflow.contrib import layers
 from tensorflow.python.layers import core as layers_core
+from tensorflow.python.ops import array_ops
+
+from tensorflow.contrib.seq2seq.python.ops.helper import MonteCarloEmbeddingHelper as MonteCarloHelper
 
 class Generator(object):
     def __init__(self, num_emb, batch_size, emb_dim, hidden_dim,
@@ -61,10 +65,47 @@ class Generator(object):
         self.enc_cell = tf.contrib.rnn.GRUCell(self.hidden_dim)
         self.encoder_outputs, self.encoder_state = tf.nn.dynamic_rnn(self.enc_cell, processed_x, self.seq_len, self.prev_mem)
 
-        train_helper = tf.contrib.seq2seq.TrainingHelper(processed_y, self.output_lengths)
+        train_helper = tf.contrib.seq2seq.TrainingHelper(processed_y,  self.output_lengths)
+        sampling_prob = tf.Variable(0.0, dtype=tf.float32)
+        # sampling_prob =tf.zeros([rep_sequence_length], tf.float32)
+        def end_fn(sample_ids):
 
-        pred_helper = tf.contrib.seq2seq.SampleEmbeddingHelper(
-            self.g_embeddings, start_tokens=tf.to_int32(self.start_tokens), end_token=1)
+            return tf.equal(sample_ids, self._end_token)
+
+        def sample( outputs):
+            """sample for GreedyEmbeddingHelper."""
+
+            # Outputs are logits, use argmax to get the most probable id
+            if not isinstance(outputs, tf.Tensor):
+                raise TypeError("Expected outputs to be a single Tensor, got: %s" %
+                                type(outputs))
+            sample_ids = tf.argmax(outputs, axis=-1, output_type=tf.int32)
+            return sample_ids
+
+        def next_inputs( sample_ids):
+            """next_inputs_fn for GreedyEmbeddingHelper."""
+
+            finished = tf.equal(sample_ids, self._end_token)
+            all_finished = tf.reduce_all(finished)
+            next_inputs = tf.cond(
+                all_finished,
+                # If we're finished, the next_inputs value doesn't matter
+                lambda: self._start_inputs,
+                lambda: self._embedding_fn(sample_ids))
+            return ( next_inputs)
+
+        # pred_helper = tf.contrib.seq2seq.SampleEmbeddingHelper(sample,numpy.full((self.batch_size),self.rep_sequence_length),tf.int32, processed_y,end_fn,next_inputs)
+        #
+        # pred_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
+        #     self.g_embeddings, start_tokens=tf.to_int32(self.start_tokens), end_token=1)
+        pred_helper = MonteCarloHelper(processed_y,self.output_lengths, self.g_embeddings, start_tokens=tf.to_int32(self.start_tokens), end_token=1,softmax_temperature=self.temperature,seed = 1881)
+
+        # pred_helper = tf.contrib.seq2seq.ScheduledEmbeddingTrainingHelper(
+        #     processed_y, self.output_lengths,
+        #     self.g_embeddings,
+        #     sampling_probability=sampling_prob)
+        # pred_helper = tf.contrib.seq2seq.ScheduledEmbeddingTrainingHelper(
+        #     self.g_embeddings, start_tokens=tf.to_int32(self.start_tokens), end_token=1,sampling_probability=sampling_prob)
 
         def decode(helper, scope, reuse=None):
             with tf.variable_scope(scope, reuse=reuse):
@@ -77,7 +118,9 @@ class Generator(object):
                 out_cell = tf.contrib.rnn.OutputProjectionWrapper(
                     attn_cell, self.num_emb, reuse=reuse
                 )
+
                 projection_layer = layers_core.Dense(self.num_emb,use_bias = False)
+
                 decoder = tf.contrib.seq2seq.BasicDecoder(
                     cell=out_cell, helper=helper,
                     initial_state=out_cell.zero_state(
