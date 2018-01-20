@@ -24,7 +24,7 @@ def create_dialogs(neg_can,words,num_fake):
     lines = f.readlines()
     hist_T = []
     reply_T = []
-
+    in_reply_T = []
     for xx in lines:
 
 
@@ -41,14 +41,14 @@ def create_dialogs(neg_can,words,num_fake):
 
                 hist_T.append(sen + " " + s1 + " eoh ")
                 reply_T.append(s2 + " eos ")
-
+                in_reply_T.append(" " + s2)
 
 
 
                 sen = sen + " " + s1 + " " + s2
 
     f.close()
-    return hist_T,reply_T
+    return hist_T,reply_T,in_reply_T
 def create_can():
     f = open('dialog-bAbI-tasks/dialog-babi-task1-API-calls-trn.txt', encoding='utf-8', errors='ignore')
     lines = f.readlines()
@@ -70,6 +70,7 @@ def create_can():
                 all_text.append(s2)
     all_text.append(" eoh ")
     all_text.append(" eos ")
+    all_text.append(" gogo ")
     all_text.append(" start dialog ")
     f.close()
 
@@ -93,19 +94,25 @@ def create_con(create_data,MAX_SEQUENCE_LENGTH = 200,MAX_REP_SEQUENCE_LENGTH = 2
 
         word_index = tokenizer.word_index
 
-        all_hists,all_replies = create_dialogs(neg_can,word_index,num_fake)
+        all_hists,all_replies,all_in_replies = create_dialogs(neg_can,word_index,num_fake)
         test_histories = all_hists[-1000:]
         test_replies = all_replies [-1000:]
+        test_in_replies = all_in_replies[-1000:]
 
         train_histories =  all_hists[:-1000]
         train_replies = all_replies[:-1000]
+        train_in_replies = all_in_replies[:-1000]
 
         print("number of Training Set ",len(train_histories))
 
         print("dialogue histories")
         print(train_histories[0:4])
+
         print("dialogue replies")
         print(train_replies[0:4])
+
+        print("dialogue input replies")
+        print(train_in_replies[0:4])
 
         embedding_matrix = np.zeros((len(word_index) + 1,len(word_index) + 1))
         print(" dictionary of words ")
@@ -120,11 +127,15 @@ def create_con(create_data,MAX_SEQUENCE_LENGTH = 200,MAX_REP_SEQUENCE_LENGTH = 2
         print("tokenizer done")
 
 
-        hist_Train = pad_sequences(tokenizer.texts_to_sequences(train_histories), maxlen=MAX_SEQUENCE_LENGTH, padding='post')
-        hist_Test = pad_sequences(tokenizer.texts_to_sequences(test_histories), maxlen=MAX_SEQUENCE_LENGTH, padding='post')
+        hist_Train = pad_sequences(tokenizer.texts_to_sequences(train_histories), maxlen=MAX_SEQUENCE_LENGTH, padding='post',value= word_index["eoh"])
+        hist_Test = pad_sequences(tokenizer.texts_to_sequences(test_histories), maxlen=MAX_SEQUENCE_LENGTH, padding='post',value= word_index["eoh"])
 
-        rep_Train = pad_sequences(tokenizer.texts_to_sequences(train_replies), maxlen=MAX_REP_SEQUENCE_LENGTH, padding='post')
-        rep_Test = pad_sequences(tokenizer.texts_to_sequences(test_replies), maxlen=MAX_REP_SEQUENCE_LENGTH, padding='post')
+
+        rep_Train = pad_sequences(tokenizer.texts_to_sequences(train_replies), maxlen=MAX_REP_SEQUENCE_LENGTH, padding='post',value= word_index["eos"])
+        rep_Test = pad_sequences(tokenizer.texts_to_sequences(test_replies), maxlen=MAX_REP_SEQUENCE_LENGTH, padding='post',value= word_index["eos"])
+
+        rep_in_Train = pad_sequences(tokenizer.texts_to_sequences(train_in_replies), maxlen=MAX_REP_SEQUENCE_LENGTH, padding='post')
+        rep_in_Test = pad_sequences(tokenizer.texts_to_sequences(test_in_replies), maxlen=MAX_REP_SEQUENCE_LENGTH, padding='post')
 
         print("training token is done")
 
@@ -144,9 +155,13 @@ def create_con(create_data,MAX_SEQUENCE_LENGTH = 200,MAX_REP_SEQUENCE_LENGTH = 2
 
         with open('repTrain_Task1.pickle', 'wb') as output:
                 pickle.dump(rep_Train, output, protocol=4)
+        with open('repInTrain_Task1.pickle', 'wb') as output:
+                pickle.dump(rep_in_Train, output, protocol=4)
 
         with open('repTest_Task1.pickle', 'wb') as output:
                 pickle.dump(rep_Test, output, protocol=4)
+        with open('repInTest_Task1.pickle', 'wb') as output:
+                pickle.dump(rep_in_Test, output, protocol=4)
 
         with open('wi_Task1.pickle', 'wb') as output:
             pickle.dump(word_index, output, protocol=4)
@@ -163,14 +178,18 @@ def create_con(create_data,MAX_SEQUENCE_LENGTH = 200,MAX_REP_SEQUENCE_LENGTH = 2
             hist_Test = pickle.load(output)
         with open('repTrain_Task1.pickle', 'rb') as output:
             rep_Train =pickle.load(output)
+        with open('repInTrain_Task1.pickle', 'rb') as output:
+            rep_in_Train =pickle.load(output)
         with open('repTest_Task1.pickle', 'rb') as output:
             rep_Test = pickle.load(output)
-
+        with open('repInTest_Task1.pickle', 'rb') as output:
+            rep_in_Test = pickle.load(output)
         with open('wi_Task1.pickle', 'rb') as output:
             word_index =pickle.load(output)
 
         print("loading finished ")
 
-    return embedding_matrix, np.array(hist_Train),np.array(hist_Test), np.array(rep_Train),np.array(rep_Test),word_index
+    return embedding_matrix, np.array(hist_Train),np.array(hist_Test), np.array(rep_Train),np.array(rep_Test),\
+           np.array(rep_in_Train),np.array(rep_in_Test),word_index
 
 # create_con(True,200)
