@@ -11,7 +11,15 @@ class Generator(object):
     def __init__(self, num_emb, batch_size, emb_dim, hidden_dim,
                  sequence_length,rep_sequence_length,
                  learning_rate=0.0004, reward_gamma=1.00):
-
+        """
+        Args:
+            num_emb: vocab size
+            batch_size: batch size
+            emb_dim: word ebedding dimension
+            hidden_dim: hiddent state dimension
+            sequence_length: history max length
+            rep_sequence_length: sentence max length
+        """
 
         self.num_emb = num_emb
         self.batch_size = batch_size
@@ -24,50 +32,47 @@ class Generator(object):
         self.learning_rate = tf.Variable(float(learning_rate), trainable=False)
         self.reward_gamma = reward_gamma
         self.g_params = []
-        self.temperature = 1.0
+        self.temperature = 1.0 # ?
         self.grad_clip = 5.0
         self.expected_reward = tf.Variable(tf.zeros([self.sequence_length]))
 
-        self.prev_mem = tf.zeros((batch_size, self.hidden_dim))
-        self.enc_inp = tf.placeholder(tf.int32, shape=[batch_size, self.sequence_length])
-
-        self.labels = tf.placeholder(tf.int32, shape=[batch_size, self.rep_sequence_length])
-        self.start_tokens = tf.zeros([batch_size],tf.int32)
-        self.dec_inp = tf.concat([tf.expand_dims(self.start_tokens, 1), self.labels], 1)
+        self.prev_mem = tf.zeros((batch_size, self.hidden_dim)) #h_{t-1}
+        self.enc_inp = tf.placeholder(tf.int32, shape=[batch_size, self.sequence_length])#history
+        self.labels = tf.placeholder(tf.int32, shape=[batch_size, self.rep_sequence_length])#expected sentence
+        self.start_tokens = tf.zeros([batch_size],tf.int32)# start token decoder input
+        self.dec_inp = tf.concat([tf.expand_dims(self.start_tokens, 1), self.labels], 1) #decoder input 
 
         self.input_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.enc_inp, 1)), 1)
         self.output_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.dec_inp, 1)), 1)
-        # self.dec_inp = [tf.placeholder(tf.int32, shape=(None,),
-        #                           name="labels%i" % t)
-        #            for t in range(self.rep_seq_length)]
-        # self.labels = [tf.placeholder(tf.int32, shape=(None,),
-        #                          name="labels%i" % t)
-        #           for t in range(self.rep_seq_length)]
-        #
-        # self.weights = [tf.ones_like(labels_t, dtype=tf.float32)
-        #            for labels_t in self.labels]
 
         self.g_embeddings = tf.Variable(tf.constant(0.0, shape=[self.num_emb, self.emb_dim]),
                                    trainable=False, name="W")
-
         self.embedding_placeholder = tf.placeholder(tf.float32, [self.num_emb, self.emb_dim])
         self.embedding_init = self.g_embeddings.assign(self.embedding_placeholder)
 
-
-
         self.seq_len = tf.placeholder(tf.int32, shape=(None,))
-        self.rewards = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length]) # get from rollout policy and discriminator
+            
+        # rewards[t] = rewards for the first t tokens of the sentence
+        # baseline[t] = baseline for the first t tokens of the sentence
+        #word_probas[t] = p(y_t | X, y_{0:t-1})
+        self.rewards = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length])
+        self.baseline = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length])
+        self.word_probas = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length])
+
         with tf.device("/cpu:0"):
             # processed_x = tf.transpose(tf.nn.embedding_lookup(self.g_embeddings, self.enc_inp), perm=[1, 0, 2])
             # processed_y = tf.transpose(tf.nn.embedding_lookup(self.g_embeddings, self.dec_inp), perm=[1, 0, 2])
             processed_x = tf.transpose(tf.nn.embedding_lookup(self.g_embeddings, self.enc_inp), perm=[0, 1, 2])
             processed_y = tf.transpose(tf.nn.embedding_lookup(self.g_embeddings, self.dec_inp), perm=[0, 1, 2])
+        
+        # Build encoder
         self.enc_cell = tf.contrib.rnn.GRUCell(self.hidden_dim)
         self.encoder_outputs, self.encoder_state = tf.nn.dynamic_rnn(self.enc_cell, processed_x, self.seq_len, self.prev_mem)
 
         train_helper = tf.contrib.seq2seq.TrainingHelper(processed_y,  self.output_lengths)
         sampling_prob = tf.Variable(0.0, dtype=tf.float32)
         # sampling_prob =tf.zeros([rep_sequence_length], tf.float32)
+
         def end_fn(sample_ids):
 
             return tf.equal(sample_ids, self._end_token)
@@ -134,12 +139,14 @@ class Generator(object):
                     impute_finished=True, maximum_iterations=self.rep_sequence_length
                 )
                 return outputs[0]
-
+        
+        # Can you specify which one to use when ?
         self.train_outputs = decode(train_helper, 'decode')
         self.gen_x = decode(pred_helper, 'decode', reuse=True)
 
         tf.identity(self.train_outputs.sample_id[0], name='train_pred')
-
+        
+        # Pre training optimization
         weights = tf.to_float(tf.not_equal(self.dec_inp[:, :-1], 1))
         self.pretrain_loss = tf.contrib.seq2seq.sequence_loss(
             self.train_outputs.rnn_output, self.labels, weights=weights)
@@ -153,34 +160,34 @@ class Generator(object):
         self.pretrain_updates = optimizer.apply_gradients(
             zip(self.clipped_gradients, self.params))
 
-
-
+        
+        # Adversarial optimiwzation
         self.g_loss = -tf.reduce_sum(
             tf.reduce_sum(
                 tf.one_hot(tf.to_int32(tf.reshape(self.labels, [-1])), self.num_emb, 1.0, 0.0) * tf.log(
-                    tf.clip_by_value(tf.reshape(self.train_outputs.rnn_output, [-1, self.num_emb]), 1e-20, 1.0)
+                    tf.clip_by_value(tf.reshape(self.word_probas, [-1, self.num_emb]), 1e-20, 1.0)
                 ), 1) * tf.reshape(self.rewards, [-1])
         )
-
         g_opt = self.g_optimizer(self.learning_rate)
-
         self.g_grad, _ = tf.clip_by_global_norm(tf.gradients(self.g_loss, self.params), self.grad_clip)
         self.g_updates = g_opt.apply_gradients(zip(self.g_grad, self.params))
 
 
-
-
-    def generate(self, sess):
-        outputs = sess.run(self.gen_x)
+    def generate(self, sess, feed_dict):
+        outputs = sess.run(self.gen_x, feed_dict=feed_dict)
         return outputs
 
     def assign_emb(self, sess):
         sess.run(self.embedding_init)
         return
 
-    def pretrain_step(self, sess, x):
-        outputs = sess.run([self.pretrain_updates, self.pretrain_loss], feed_dict={self.x: x})
+    def pretrain_step(self, sess, feed_dict):
+        outputs = sess.run([self.pretrain_updates, self.pretrain_loss], feed_dict=feed_dict)
         return outputs
+
+    def adv_update(sess, sentence, word_probas, rewards, baseline):
+        feed_dict = {self.labels= y, self.word_probas: word_probas, self.baseline: baseline, self.rewards = rewards}
+        sess.run(self.g_updates, feed_dict)
 
     def init_matrix(self, shape):
         return tf.random_normal(shape, stddev=0.1)
@@ -188,79 +195,104 @@ class Generator(object):
     def init_vector(self, shape):
         return tf.zeros(shape)
 
-    # def create_recurrent_unit(self, params):
-    #     # Weights and Bias for input and hidden tensor
-    #     self.Wi = tf.Variable(self.init_matrix([self.emb_dim, self.hidden_dim]))
-    #     self.Ui = tf.Variable(self.init_matrix([self.hidden_dim, self.hidden_dim]))
-    #     self.bi = tf.Variable(self.init_matrix([self.hidden_dim]))
-    #
-    #     self.Wf = tf.Variable(self.init_matrix([self.emb_dim, self.hidden_dim]))
-    #     self.Uf = tf.Variable(self.init_matrix([self.hidden_dim, self.hidden_dim]))
-    #     self.bf = tf.Variable(self.init_matrix([self.hidden_dim]))
-    #
-    #     self.Wog = tf.Variable(self.init_matrix([self.emb_dim, self.hidden_dim]))
-    #     self.Uog = tf.Variable(self.init_matrix([self.hidden_dim, self.hidden_dim]))
-    #     self.bog = tf.Variable(self.init_matrix([self.hidden_dim]))
-    #
-    #     self.Wc = tf.Variable(self.init_matrix([self.emb_dim, self.hidden_dim]))
-    #     self.Uc = tf.Variable(self.init_matrix([self.hidden_dim, self.hidden_dim]))
-    #     self.bc = tf.Variable(self.init_matrix([self.hidden_dim]))
-    #     params.extend([
-    #         self.Wi, self.Ui, self.bi,
-    #         self.Wf, self.Uf, self.bf,
-    #         self.Wog, self.Uog, self.bog,
-    #         self.Wc, self.Uc, self.bc])
-    #
-    #     def unit(x, hidden_memory_tm1):
-    #         previous_hidden_state, c_prev = tf.unstack(hidden_memory_tm1)
-    #
-    #         # Input Gate
-    #         i = tf.sigmoid(
-    #             tf.matmul(x, self.Wi) +
-    #             tf.matmul(previous_hidden_state, self.Ui) + self.bi
-    #         )
-    #
-    #         # Forget Gate
-    #         f = tf.sigmoid(
-    #             tf.matmul(x, self.Wf) +
-    #             tf.matmul(previous_hidden_state, self.Uf) + self.bf
-    #         )
-    #
-    #         # Output Gate
-    #         o = tf.sigmoid(
-    #             tf.matmul(x, self.Wog) +
-    #             tf.matmul(previous_hidden_state, self.Uog) + self.bog
-    #         )
-    #
-    #         # New Memory Cell
-    #         c_ = tf.nn.tanh(
-    #             tf.matmul(x, self.Wc) +
-    #             tf.matmul(previous_hidden_state, self.Uc) + self.bc
-    #         )
-    #
-    #         # Final Memory cell
-    #         c = f * c_prev + i * c_
-    #
-    #         # Current Hidden state
-    #         current_hidden_state = o * tf.nn.tanh(c)
-    #
-    #         return tf.stack([current_hidden_state, c])
-    #
-    #     return unit
-    #
-    # def create_output_unit(self, params):
-    #     self.Wo = tf.Variable(self.init_matrix([self.hidden_dim, self.num_emb]))
-    #     self.bo = tf.Variable(self.init_matrix([self.num_emb]))
-    #     params.extend([self.Wo, self.bo])
-    #
-    #     def unit(hidden_memory_tuple):
-    #         hidden_state, c_prev = tf.unstack(hidden_memory_tuple)
-    #         # hidden_state : batch x hidden_dim
-    #         logits = tf.matmul(hidden_state, self.Wo) + self.bo
-    #         # output = tf.nn.softmax(logits)
-    #         return logits
-    #
-    #     return unit
+    def g_optimizer(self, learning_rate):
+        return tf.train.AdamOptimizer(learning_rate)
 
-    def g_optimizer(self, *args, **kwargs):
-        return tf.train.AdamOptimizer(*args, **kwargs)
+def test_advtrain():
+    """
+    Adversarial training for G1 and D1
+    """
+    # Load G1 and D1
+    g_steps = 1
+    d_steps = 5
+    train_set_size = 5000
+    batch√size 50
+    max_seq_length = 200
+    mc_num = 5
+
+    embedding_matrix, hist_train, hist_val, reply_train, reply_val,
+    word_index = readFBTask1Seq2Seq.crate_con(True, max_seq_length)
+
+    embedding_dim = len(word_index+1)
+
+    G1 = Generator()
+
+    for i in range(g_steps):
+        for j in range(train_set_size/batch_size):
+            X = hist_train[idxTrain[j*batch_size:(j+1)*batch_size],:]
+            Y = reply_train[idxTrain[j*batch_size:(j+1)*batch_size],:]
+            
+            # Shuffle
+            X = np.array(X).T
+            Y = np.array(Y).T
+
+            feed_dict = {enc_input[t]: X[t] for t in rqnge(seq_length)}
+            pretrain_step(feed_dict)
+ 
+
+def test_advtrain():
+    """
+    Adversarial training for G1 and D1
+    """
+    # Load G1 and D1
+    g_steps = 1
+    d_steps = 5
+    train_set_size = 5000
+    batch√size 50
+    max_seq_length = 200
+    mc_num = 5
+
+    embedding_matrix, hist_train, hist_val, reply_train, reply_val,
+    word_index = readFBTask1Seq2Seq.crate_con(True, max_seq_length)
+
+    embedding_dim = len(word_index+1)
+
+    G1 = Generator()
+    D1 = Discriminator(max_seq_length, word_index, embedding_train)
+    rollout = WordRollout(G1)
+    baseline = Baseline
+
+    for i in range(g_steps):
+        for j in range(train_set_size/batch_size):
+            X = hist_train[idxTrain[j*batch_size:(j+1)*batch_size],:]
+            Y = reply_train[idxTrain[j*batch_size:(j+1)*batch_size],:]
+            
+            # Shuffle
+            X = np.array(X).T
+            Y = np.array(Y).T
+
+            feed_dict = {enc_input[t]: X[t] for t in rqnge(seq_length)}
+            word_probas,sentence = generator.generate(feed_dict)
+
+            rewards = rollout.get_rewards(sentence, mc_num,
+                    discriminator)
+            # TODO
+            #baseline = baseline.get_values(sentence)
+
+            generator.adv_update(sess, sentence, word_probas, rewards, baseline)
+
+    for i in range(d_steps):
+        X = hist_train[idxTrain[j*batch_size:(j+1)*batch_size],:]
+        Y+ = reply_train[idxTrain[j*batch_size:(j+1)*batch_size],:]
+        
+        # Shuffle
+        X = np.array(X).T
+        Y = np.array(Y).T
+ 
+        feed_dict = {enc_input[t]: X[t] for t in rqnge(seq_length)}
+        
+        sentence_distro = generator.get_sentence_distro(feed_dict)
+        Y_ = distro2sentence(sentence_distro)
+
+        # Make 2 batches out of Y_ and Y+
+        X1, X1, Y1, Y2 = make_batches(X,Y+,Y_)
+        disc.train(X1, Y1, batch_size)
+        disc.train(X2, Y2, batch_size)
+            
+
+def adv_train_2():
+
+
+def interactive_train():
+
+
