@@ -57,7 +57,7 @@ for ep in range(1):
         X = hist_train[idxTrain[j*BATCH_SIZE:(j+1)*BATCH_SIZE],:]
         Y = reply_train[idxTrain[j*BATCH_SIZE:(j+1)*BATCH_SIZE],:]
 
-        sentence = generator.generate(sess, X, Y)
+        _,sentence = generator.generate(sess, X, Y)
         rewards = generator.MC_reward(sess, X, sentence, MC_NUM, discriminator,word_index)
 
         # TODO insert new sentence into history
@@ -74,6 +74,7 @@ for ep in range(1):
         print("Y.shape", Y.shape)
         print("baseline.shape", b.shape)
         print("rewards.shape", rewards.shape)
+        # TODO: b has a bad shape
         generator.advtrain_step(sess, X, Y, sentence, rewards, b)
 
         baseline.train(history_update, rewards)

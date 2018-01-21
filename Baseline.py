@@ -81,6 +81,7 @@ class Baseline(object):
             y_batch: MC rewards
             batch_size:
         """
+        # TODO the input is not ok
         if self.trained == False:
             baseline = np.zeros(x_batch.shape)
         else:

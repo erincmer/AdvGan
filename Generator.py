@@ -152,23 +152,12 @@ class Generator(object):
         
         self.g_loss = -tf.reduce_sum(
                 tf.reduce_sum(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 0.0, 1.0) *
-                    tf.log(tf.clip_by_value(tf.reshape(self.train_outputs.rnn_output, [-1, self.num_emb]),1e-20, 1.0)) )
+                    tf.log(tf.clip_by_value(tf.reshape(self.train_outputs[0].rnn_output, [-1, self.num_emb]),1e-20, 1.0)) )
                 * tf.reshape(self.rewards, [-1]))
 
-
-        # self.g_loss = -tf.reduce_sum(
-        #     tf.reduce_sum(
-        #         tf.one_hot(tf.to_int32(tf.reshape(self.labels, [-1])), self.num_emb, 1.0, 0.0) * tf.log(
-        #             tf.clip_by_value(tf.reshape(self.train_outputs.rnn_output, [-1, self.num_emb]), 1e-20, 1.0)
-        #         ), 1) * tf.reshape(self.rewards, [-1])
-        # )
-        #
-        # g_opt = self.g_optimizer(self.learning_rate)
-        #
-        # self.g_grad, _ = tf.clip_by_global_norm(tf.gradients(self.g_loss, self.params), self.grad_clip)
-        # self.g_updates = g_opt.apply_gradients(zip(self.g_grad, self.params))
-
-
+        g_opt = self.g_optimizer(self.learning_rate)
+        self.g_grad, _ = tf.clip_by_global_norm(tf.gradients(self.g_loss, self.params), self.grad_clip)
+        self.g_updates = g_opt.apply_gradients(zip(self.g_grad, self.params))
 
 
     def generate(self, sess,x,y):
@@ -232,8 +221,7 @@ class Generator(object):
                 #print("sentence.shape: ", sentence.shape)
                 #print("gen_input_t.shape: ", gen_input_t.shape)
                 #print("gen_input_t[:,0:t].shape: ", gen_input_t[:,0:t].shape)
-                #print("np.tile(sentence[0:t], (mc_steps,1)).shape: ",
-                #        np.tile(sentence[0,0:t], (mc_steps,1)).shape)
+                #print("sentence[:,0:t].shape: ", sentence[:,0:t].shape)
                 
                 gen_input_t[:,0:t] = sentence[:,0:t]
                 
