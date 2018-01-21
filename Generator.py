@@ -22,6 +22,7 @@ class Generator(object):
         self.end_token = end_token
         self.hist_end_token = end_token
         self.start_tokens = tf.constant([start_token] * self.batch_size, dtype=tf.int32)
+        self.start_tokens_check = tf.constant([start_token+5] * self.batch_size, dtype=tf.int32)
         # self.start_token = tf.constant([start_token] * self.batch_size, dtype=tf.int32)
         self.learning_rate = tf.Variable(float(learning_rate), trainable=False)
         self.reward_gamma = reward_gamma
@@ -33,26 +34,30 @@ class Generator(object):
         self.prev_mem = tf.zeros((batch_size, self.hidden_dim))
         self.enc_inp = tf.placeholder(tf.int32, shape=[batch_size, self.sequence_length])
         self.labels = tf.placeholder(tf.int32, shape=[batch_size, self.rep_sequence_length])
-        self.x = tf.placeholder(tf.int32, shape=[batch_size, self.rep_sequence_length])
 
         # self.start_tokens = tf.zeros([batch_size],tf.int32)
         self.dec_inp = tf.concat([tf.expand_dims(self.start_tokens, 1), self.labels], 1)
 
         self.input_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.enc_inp, self.hist_end_token)), 1)
-        self.output_lengths_full = tf.constant([self.rep_sequence_length]*self.batch_size, dtype=tf.int32)
         self.output_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.dec_inp, self.end_token)), 1)
+        self.output_lengths_full = tf.constant([self.rep_sequence_length] * self.batch_size, dtype=tf.int32)
+        # self.dec_inp = [tf.placeholder(tf.int32, shape=(None,),
+        #                           name="labels%i" % t)
+        #            for t in range(self.rep_seq_length)]
+        # self.labels = [tf.placeholder(tf.int32, shape=(None,),
+        #                          name="labels%i" % t)
+        #           for t in range(self.rep_seq_length)]
+        #
+        # self.weights = [tf.ones_like(labels_t, dtype=tf.float32)
+        #            for labels_t in self.labels]
 
         self.g_embeddings = tf.Variable(tf.constant(0.0, shape=[self.num_emb, self.emb_dim]),
                                    trainable=False, name="W")
 
         self.embedding_placeholder = tf.placeholder(tf.float32, [self.num_emb, self.emb_dim])
         self.embedding_init = self.g_embeddings.assign(self.embedding_placeholder)
-        
-        # word_proba[t] = p(y_t | X, y_{0:t-1}
-        self.rewards = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length])
-        self.baseline = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length])
-        self.word_probas = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length])
 
+        self.rewards = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length]) # get from rollout policy and discriminator
         with tf.device("/cpu:0"):
             # processed_x = tf.transpose(tf.nn.embedding_lookup(self.g_embeddings, self.enc_inp), perm=[1, 0, 2])
             # processed_y = tf.transpose(tf.nn.embedding_lookup(self.g_embeddings, self.dec_inp), perm=[1, 0, 2])
@@ -61,18 +66,21 @@ class Generator(object):
         self.enc_cell = tf.contrib.rnn.GRUCell(self.hidden_dim)
         self.encoder_outputs, self.encoder_state = tf.nn.dynamic_rnn(self.enc_cell, processed_x, self.input_lengths, self.prev_mem)
 
-        train_helper = tf.contrib.seq2seq.TrainingHelper(processed_y,  self.output_lengths_full)
-        sampling_prob = tf.Variable(0.0, dtype=tf.float32)
+        train_helper = tf.contrib.seq2seq.TrainingHelper(processed_y,  self.output_lengths_full,time_major=False)
+
+
+
+        # sampling_prob = tf.Variable(0.0, dtype=tf.float32)
         # pred_helper = tf.contrib.seq2seq.SampleEmbeddingHelper(sample,numpy.full((self.batch_size),self.rep_sequence_length),tf.int32, processed_y,end_fn,next_inputs)
         #
         # pred_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
-        #     self.g_embeddings, start_tokens=tf.to_int32(self.start_tokens), end_token=1)
+        #     self.g_embeddings, start_tokens=tf.to_int32(self.start_tokens), end_token=200)
         pred_helper = MonteCarloHelper(processed_y,self.output_lengths, self.g_embeddings, start_tokens=tf.to_int32(self.start_tokens), end_token=self.end_token,softmax_temperature=self.temperature,seed = 1881)
-
-        # pred_helper = tf.contrib.seq2seq.ScheduledEmbeddingTrainingHelper(
-        #     processed_y, self.output_lengths,
+        # pred_helper = tf.contrib.seq2seq.TrainingHelper(processed_y, self.output_lengths_full)
+        # train_helper = tf.contrib.seq2seq.ScheduledEmbeddingTrainingHelper(
+        #     processed_y, self.output_lengths_full,
         #     self.g_embeddings,
-        #     sampling_probability=sampling_prob)
+        #     sampling_probability=0.0)
         # pred_helper = tf.contrib.seq2seq.ScheduledEmbeddingTrainingHelper(
         #     self.g_embeddings, start_tokens=tf.to_int32(self.start_tokens), end_token=1,sampling_probability=sampling_prob)
 
@@ -102,28 +110,33 @@ class Generator(object):
                     decoder=decoder, output_time_major=False,
                     impute_finished=True, maximum_iterations=self.rep_sequence_length
                 )
-                print("outputs: ", outputs)
-                return outputs[0]
+                return outputs
 
         self.train_outputs = decode(train_helper, 'decode')
-        print("\nself.train_outputs: ",self.train_outputs)
-        print("\nself.train_outputs.rnn_output: ",self.train_outputs.rnn_output)
-        print("\nself.train_outputs.sample_id: ",self.train_outputs.sample_id)
-        #print("train_outputs.shape()", self.train_outputs.get_shape())
         self.gen_x = decode(pred_helper, 'decode', reuse=True)
 
-        #tf.identity(self.train_outputs.sample_id[0], name='train_pred')
-        #tf.identity(self.train_outputs.rnn_output[0], name='train_pred')
+
 
         weights = tf.to_float(tf.not_equal(self.dec_inp[:, :-1], self.end_token))
-        print(self.labels.get_shape())
-        print(weights.get_shape())
-        print(self.train_outputs.rnn_output.get_shape())
-        logits = self.train_outputs.rnn_output
-       
-        # Pre training optimization
+        # print(self.labels.get_shape())
+        # print(weights.get_shape())
+        # print(self.train_outputs[0].rnn_output.get_shape())
+        # input("wait")
         self.pretrain_loss = tf.contrib.seq2seq.sequence_loss(
-            logits = self.train_outputs.rnn_output, targets = self.labels, weights=weights)
+            logits = self.train_outputs[0].rnn_output, targets = self.labels, weights=weights)
+
+        # crossent = tf.nn.sparse_softmax_cross_entropy_with_logits(
+        #     labels=self.labels, logits=self.train_outputs.rnn_output)
+        #
+        # self.pretrain_loss = (tf.reduce_sum(crossent * weights) /
+        #               batch_size)
+        self.pred_output = self.gen_x[0].rnn_output
+        self.pred_train_output = self.train_outputs[0].rnn_output
+
+        self.pred_output_ids = self.gen_x[0].sample_id
+        self.pred_train_output_ids = self.train_outputs[0].sample_id
+
+
         self.params = tf.trainable_variables()
         self.gradients = tf.gradients(self.pretrain_loss, self.params)
         self.clipped_gradients, _ = tf.clip_by_global_norm( self.gradients, self.grad_clip)
@@ -132,63 +145,118 @@ class Generator(object):
         self.pretrain_updates = optimizer.apply_gradients(
             zip(self.clipped_gradients, self.params))
 
-        # Adversarial optimization
-        print("\ntrain variables: \n",tf.trainable_variables())
-        print("self.x.get_shpae(): ", self.x.get_shape())
-        print("self.rewards.get_shape()): ", self.rewards.get_shape())
-        print("self.baseline.get_shape()): ", self.baseline.get_shape())
-        
-        self.g_loss = -tf.reduce_sum(
-                tf.reduce_sum(tf.one_hot(tf.to_int32(tf.reshape(self.x, [-1])), self.num_emb, 0.0, 1.0) *
-                    tf.log(tf.clip_by_value(tf.reshape(self.train_outputs.rnn_output, [-1, self.num_emb]),1e-20, 1.0)) )
-                * tf.reshape(self.rewards, [-1]))
-
-        self.params = tf.trainable_variables()
-        g_opt = self.g_optimizer(self.learning_rate)
-        self.g_grad, _ = tf.clip_by_global_norm(tf.gradients(self.g_loss, self.params), self.grad_clip)
-        self.g_updates = g_opt.apply_gradients(zip(self.g_grad, self.params))
 
 
-    def generate(self, sess, X,Y):
-        """
-        Generates a sentence and the proba of each of word of it
-        Args: 
-            sess: tensorflow session
-            X: dialogue history (encoder input)
-        """
-        feed_dict = {self.enc_inp:X, self.labels:Y} 
-        _, sentence = sess.run(self.gen_x, feed_dict=feed_dict)
-        return sentence
+        # self.g_loss = -tf.reduce_sum(
+        #     tf.reduce_sum(
+        #         tf.one_hot(tf.to_int32(tf.reshape(self.labels, [-1])), self.num_emb, 1.0, 0.0) * tf.log(
+        #             tf.clip_by_value(tf.reshape(self.train_outputs.rnn_output, [-1, self.num_emb]), 1e-20, 1.0)
+        #         ), 1) * tf.reshape(self.rewards, [-1])
+        # )
+        #
+        # g_opt = self.g_optimizer(self.learning_rate)
+        #
+        # self.g_grad, _ = tf.clip_by_global_norm(tf.gradients(self.g_loss, self.params), self.grad_clip)
+        # self.g_updates = g_opt.apply_gradients(zip(self.g_grad, self.params))
+
+
+
+
+    def generate(self, sess,x,y):
+        outputs,ids = sess.run([self.pred_output,self.pred_output_ids],feed_dict={self.enc_inp: x,self.labels:y})
+        return outputs ,ids
+
+    def generate_train(self, sess,x,y):
+        outputs , ids = sess.run([self.pred_train_output,self.pred_train_output_ids],feed_dict={self.enc_inp: x,self.labels:y})
+        return outputs ,ids
 
     def assign_emb(self, sess,x):
         sess.run(self.embedding_init,feed_dict={self.embedding_placeholder: x})
         return
 
     def pretrain_step(self, sess, x,y):
-        outputs = sess.run([self.pretrain_updates, self.pretrain_loss], feed_dict={self.enc_inp: x,self.labels:y})
+        outputs = sess.run([self.pretrain_updates, self.pretrain_loss,self.pred_train_output ], feed_dict={self.enc_inp: x,self.labels:y})
         return outputs
-
-    #def advtrain_step(self, sess, word_probas, rewards, baseline):
-    def advtrain_step(self, sess, history, labels, sentence, rewards, baseline):
-        """
-
-        Args:
-            sess: tf session
-            sentence: sentence output by generator
-            rewards: 
-            baseline
-        """
-        #feed_dict = {self.word_probas: word_probas, self.rewards:rewards, self.baseline:baseline}
-        feed_dict = {self.enc_inp:history, self.labels: labels, self.x: sentence, self.rewards:rewards, self.baseline:baseline}
-        sess.run([self.g_updates], feed_dict)
 
     def init_matrix(self, shape):
         return tf.random_normal(shape, stddev=0.1)
 
     def init_vector(self, shape):
         return tf.zeros(shape)
-    
+
+    # def create_recurrent_unit(self, params):
+    #     # Weights and Bias for input and hidden tensor
+    #     self.Wi = tf.Variable(self.init_matrix([self.emb_dim, self.hidden_dim]))
+    #     self.Ui = tf.Variable(self.init_matrix([self.hidden_dim, self.hidden_dim]))
+    #     self.bi = tf.Variable(self.init_matrix([self.hidden_dim]))
+    #
+    #     self.Wf = tf.Variable(self.init_matrix([self.emb_dim, self.hidden_dim]))
+    #     self.Uf = tf.Variable(self.init_matrix([self.hidden_dim, self.hidden_dim]))
+    #     self.bf = tf.Variable(self.init_matrix([self.hidden_dim]))
+    #
+    #     self.Wog = tf.Variable(self.init_matrix([self.emb_dim, self.hidden_dim]))
+    #     self.Uog = tf.Variable(self.init_matrix([self.hidden_dim, self.hidden_dim]))
+    #     self.bog = tf.Variable(self.init_matrix([self.hidden_dim]))
+    #
+    #     self.Wc = tf.Variable(self.init_matrix([self.emb_dim, self.hidden_dim]))
+    #     self.Uc = tf.Variable(self.init_matrix([self.hidden_dim, self.hidden_dim]))
+    #     self.bc = tf.Variable(self.init_matrix([self.hidden_dim]))
+    #     params.extend([
+    #         self.Wi, self.Ui, self.bi,
+    #         self.Wf, self.Uf, self.bf,
+    #         self.Wog, self.Uog, self.bog,
+    #         self.Wc, self.Uc, self.bc])
+    #
+    #     def unit(x, hidden_memory_tm1):
+    #         previous_hidden_state, c_prev = tf.unstack(hidden_memory_tm1)
+    #
+    #         # Input Gate
+    #         i = tf.sigmoid(
+    #             tf.matmul(x, self.Wi) +
+    #             tf.matmul(previous_hidden_state, self.Ui) + self.bi
+    #         )
+    #
+    #         # Forget Gate
+    #         f = tf.sigmoid(
+    #             tf.matmul(x, self.Wf) +
+    #             tf.matmul(previous_hidden_state, self.Uf) + self.bf
+    #         )
+    #
+    #         # Output Gate
+    #         o = tf.sigmoid(
+    #             tf.matmul(x, self.Wog) +
+    #             tf.matmul(previous_hidden_state, self.Uog) + self.bog
+    #         )
+    #
+    #         # New Memory Cell
+    #         c_ = tf.nn.tanh(
+    #             tf.matmul(x, self.Wc) +
+    #             tf.matmul(previous_hidden_state, self.Uc) + self.bc
+    #         )
+    #
+    #         # Final Memory cell
+    #         c = f * c_prev + i * c_
+    #
+    #         # Current Hidden state
+    #         current_hidden_state = o * tf.nn.tanh(c)
+    #
+    #         return tf.stack([current_hidden_state, c])
+    #
+    #     return unit
+    #
+    # def create_output_unit(self, params):
+    #     self.Wo = tf.Variable(self.init_matrix([self.hidden_dim, self.num_emb]))
+    #     self.bo = tf.Variable(self.init_matrix([self.num_emb]))
+    #     params.extend([self.Wo, self.bo])
+    #
+    #     def unit(hidden_memory_tuple):
+    #         hidden_state, c_prev = tf.unstack(hidden_memory_tuple)
+    #         # hidden_state : batch x hidden_dim
+    #         logits = tf.matmul(hidden_state, self.Wo) + self.bo
+    #         # output = tf.nn.softmax(logits)
+    #         return logits
+    #
+    #     return unit
+
     def g_optimizer(self, *args, **kwargs):
         return tf.train.AdamOptimizer(*args, **kwargs)
-
-

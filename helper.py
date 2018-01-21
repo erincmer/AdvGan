@@ -579,8 +579,8 @@ class MonteCarloEmbeddingHelper(TrainingHelper):
         gen_array_ops.fill([self.batch_size], -1))
     # return sample_ids
 
-
-
+  #
+  #
   def next_inputs(self, time, outputs, state, sample_ids, name=None):
     """next_inputs_fn for GreedyEmbeddingHelper."""
 
@@ -603,8 +603,41 @@ class MonteCarloEmbeddingHelper(TrainingHelper):
 
     next_inputs = control_flow_ops.cond(
       all_finished, lambda: self._start_inputs,lambda: maybe_sample(sample_ids,input_finished,base_next_inputs) )
-    return (finished, next_inputs, state)
-
+    return (finished, base_next_inputs, state)
+  # def sample(self, time, outputs, state, name=None):
+  #   """sample for GreedyEmbeddingHelper."""
+  #   del time, state  # unused by sample_fn
+  #   # Outputs are logits, use argmax to get the most probable id
+  #   if not isinstance(outputs, ops.Tensor):
+  #     raise TypeError("Expected outputs to be a single Tensor, got: %s" %
+  #                     type(outputs))
+  #   sample_ids = math_ops.cast(
+  #       math_ops.argmax(outputs, axis=-1), dtypes.int32)
+  #   return sample_ids
+  # def next_inputs(self, time, outputs, state, name=None, **unused_kwargs):
+  #   """next_inputs_fn for TrainingHelper."""
+  #   with ops.name_scope(name, "TrainingHelperNextInputs",
+  #                       [time, outputs, state]):
+  #     next_time = time + 1
+  #     finished = (next_time >= self._sequence_length)
+  #     all_finished = math_ops.reduce_all(finished)
+  #     def read_from_ta(inp):
+  #       return inp.read(next_time)
+  #     next_inputs = control_flow_ops.cond(
+  #         all_finished, lambda: self._zero_inputs,
+  #         lambda: nest.map_structure(read_from_ta, self._input_tas))
+  #     return (finished, next_inputs, state)
+  # def next_inputs(self, time, outputs, state, sample_ids, name=None):
+  #   """next_inputs_fn for GreedyEmbeddingHelper."""
+  #   del time, outputs  # unused by next_inputs_fn
+  #   finished = math_ops.equal(sample_ids, self._end_token)
+  #   all_finished = math_ops.reduce_all(finished)
+  #   next_inputs = control_flow_ops.cond(
+  #       all_finished,
+  #       # If we're finished, the next_inputs value doesn't matter
+  #       lambda: self._start_inputs,
+  #       lambda: self._embedding_fn(sample_ids))
+  #   return (finished, next_inputs, state)
 class GreedyEmbeddingHelper(Helper):
   """A helper for use during inference.
 
