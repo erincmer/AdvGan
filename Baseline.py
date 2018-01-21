@@ -13,8 +13,9 @@ import readFBTask1
 
 MAX_SEQ_LENGTH = 200
 
-class DiscSentence(object):
+class Baseline(object):
     def __init__(self, max_seq_length, word_index, embedding_matrix):
+        self.trained = False # Has the baseline been trained once ? 
         self.max_seq_length = max_seq_length
         self.word_index = word_index
         self.embedding_matrix = embedding_matrix 
@@ -28,14 +29,13 @@ class DiscSentence(object):
         sequence_input = Input(shape=(self.max_seq_length,), dtype='int32')
         embedded_sequences = self.embedding_layer(sequence_input)
         l_lstm = Bidirectional(LSTM(100,recurrent_dropout=0.3))(embedded_sequences)
-        preds = Dense(2, activation='softmax')(l_lstm)
+        preds = Dense(1)(l_lstm)
         
         self.model = Model(sequence_input, preds)
-        self.model.compile(loss='categorical_crossentropy',
-                      optimizer='rmsprop',
-                      metrics=['acc'])
+        self.model.compile(loss='mean_squared_error',
+                      optimizer='rmsprop')
         
-        print("model fitting - Bidirectional LSTM")
+        print("model fitting - Bidirectional LSTM regressor")
         self.model.summary()
 
     def pretrain(self, x_train, x_val, y_train, y_val):
@@ -62,21 +62,37 @@ class DiscSentence(object):
                   epochs=10, batch_size=50)
 
     def train(self, x_batch, y_batch, batch_size):
+        """ 
+        Train step
+        Args: 
+            x_batch: sentence output by G
+            y_batch: expected reward (compute with MC rollout)
+            batch_size: batch size
+        """
+        self.trained=True
         self.model.train_on_batch(x_batch, y_batch, batch_size) 
         print('train')
 
-    def get_rewards(self, x_batch):
-        rewards = self.model.predict_on_batch(x_batch) 
-        print('get rewards')
-        return rewards
+    def get_baseline(self, x_batch):
+        """
+        Prediction step
+        Ags:
+            x_batch: 
+            y_batch: MC rewards
+            batch_size:
+        """
+        if self.trained == False:
+            baseline = np.zeros(x_batch.shape)
+        else:
+            baseline = self.model.predict_on_batch(x_batch) 
+            print('get baseline')
+        
+        return baseline
 
 
 def main():
-
+    prin('TODO')
     # Test pre train
-    embedding_matrix,x_train,x_val,y_train,y_val,word_index = readFBTask1.create_con(True,MAX_SEQ_LENGTH)
-    disc = DiscSentence(MAX_SEQ_LENGTH, word_index, embedding_matrix)
-    disc.pretrain(x_train, x_val, y_train, y_val)
 
     # Test train
 
