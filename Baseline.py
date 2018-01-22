@@ -85,7 +85,7 @@ class Baseline(object):
             # print("gen_input_t[:,0:t].shape: ", gen_input_t[:,0:t].shape)
             # print("sentence[:,0:t].shape: ", sentence[:,0:t].shape)
 
-            gen_input_t[:, 0:t] = sentence[:, 0:t]
+            gen_input_t[:, 0:t-1] = sentence[:, 0:t-1]
 
             # print("word_index['eoh']: ", word_index['eoh'])
             # print("word_index['eos']: ", word_index['eos'])
@@ -148,7 +148,7 @@ class Baseline(object):
             # print("gen_input_t[:,0:t].shape: ", gen_input_t[:,0:t].shape)
             # print("sentence[:,0:t].shape: ", sentence[:,0:t].shape)
 
-            gen_input_t[:, 0:t] = sentence[:, 0:t]
+            gen_input_t[:, 0:t-1] = sentence[:, 0:t-1]
 
             # print("word_index['eoh']: ", word_index['eoh'])
             # print("word_index['eos']: ", word_index['eos'])

@@ -10,7 +10,51 @@ from keras.preprocessing.text import Tokenizer
 import pickle
 
 
+def create_fake_dialogs(neg_can,words,num_fake):
+    f = open('dialog-bAbI-tasks/dialog-babi-task1-API-calls-trn.txt', encoding='utf-8', errors='ignore')
 
+    lines = f.readlines()
+    train_T = []
+    label_T = []
+
+    for xx in lines:
+
+
+            x = xx.split("\t")
+            if (len(x) > 1):
+
+                if x[0][0] == "1":
+                    sen = " start dialog "
+
+                s1 = x[0][x[0].find(" ") + 1:].rstrip()
+                s2=  x[1].rstrip()
+
+
+                C = 0
+
+                while C < num_fake*2:
+                    # for s in range(len(neg_can)):
+                    s = np.random.randint(0, len(neg_can))
+                    if neg_can[s] != s2:
+                        train_T.append(sen + " " + s1 +  " eoh " + s2 + " eos ")
+                        label_T.append(1)
+                        train_T.append(sen + " " + s1 + " eoh " + neg_can[s] + " eos ")
+                        label_T.append(0)
+                        C = C + 1
+                    s = np.random.randint(3, 10)
+                    ranWords = np.random.choice(list(words), s,replace=True)
+                    negSen = ' '.join(ranWords)
+                    if negSen != s2:
+                        train_T.append(sen + " " + s1 + " eoh " + s2 + " eos ")
+                        label_T.append(1)
+                        train_T.append(sen + " " + s1 + " eoh " + negSen + " eos ")
+                        label_T.append(0)
+                        C = C + 1
+
+                sen = sen + " " + s1 + " " + s2
+
+    f.close()
+    return train_T,label_T
 
 def create_dialogs(neg_can,words,num_fake):
     f = open('dialog-bAbI-tasks/dialog-babi-task1-API-calls-trn.txt', encoding='utf-8', errors='ignore')
@@ -89,6 +133,8 @@ def create_con(create_data,MAX_SEQUENCE_LENGTH = 200,MAX_REP_SEQUENCE_LENGTH = 2
         word_index = tokenizer.word_index
 
         all_hists,all_replies,all_in_replies = create_dialogs(neg_can,word_index,num_fake)
+
+        all_dialogs, label_dialogs = create_fake_dialogs(neg_can, word_index, num_fake)
         test_histories = all_hists[-1000:]
         test_replies = all_replies [-1000:]
         test_in_replies = all_in_replies[-1000:]
@@ -97,8 +143,18 @@ def create_con(create_data,MAX_SEQUENCE_LENGTH = 200,MAX_REP_SEQUENCE_LENGTH = 2
         train_replies = all_replies[:-1000]
         train_in_replies = all_in_replies[:-1000]
 
-        print("number of Training Set ",len(train_histories))
+        test_dialogs = all_dialogs[-1000:]
+        label_test_dialogs = label_dialogs[-1000:]
 
+        train_dialogs = all_dialogs[:-1000]
+        label_train_dialogs = label_dialogs[:-1000]
+
+
+        print("number of Training Set ",len(train_histories))
+        print("real dialogues")
+        print(train_dialogs[0:4])
+        print("fake dialogues")
+        print(train_dialogs[0:4])
         print("dialogue histories")
         print(train_histories[0:4])
 
@@ -131,6 +187,13 @@ def create_con(create_data,MAX_SEQUENCE_LENGTH = 200,MAX_REP_SEQUENCE_LENGTH = 2
         rep_in_Train = pad_sequences(tokenizer.texts_to_sequences(train_in_replies), maxlen=MAX_REP_SEQUENCE_LENGTH, padding='post')
         rep_in_Test = pad_sequences(tokenizer.texts_to_sequences(test_in_replies), maxlen=MAX_REP_SEQUENCE_LENGTH, padding='post')
 
+
+
+        Train = pad_sequences(tokenizer.texts_to_sequences(train_dialogs), maxlen=MAX_SEQUENCE_LENGTH, padding='post')
+
+
+
+        Test = pad_sequences(tokenizer.texts_to_sequences(test_dialogs), maxlen=MAX_SEQUENCE_LENGTH, padding='post')
         print("training token is done")
 
         # print(hist_Train[0:3])
@@ -184,7 +247,7 @@ def create_con(create_data,MAX_SEQUENCE_LENGTH = 200,MAX_REP_SEQUENCE_LENGTH = 2
         print("loading finished ")
 
     return embedding_matrix, np.array(hist_Train),np.array(hist_Test), np.array(rep_Train),np.array(rep_Test),\
-           np.array(rep_in_Train),np.array(rep_in_Test),word_index
+           np.array(rep_in_Train),np.array(rep_in_Test),np.array(Train),np.array(Test), np.array(label_train_dialogs),np.array(label_test_dialogs),word_index
 
 if __name__ == "__main__" :
     create_con(True, MAX_SEQUENCE_LENGTH=200, MAX_REP_SEQUENCE_LENGTH=20)

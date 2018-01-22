@@ -57,10 +57,11 @@ class DiscSentence(object):
         print(y_train.sum(axis=0))
         print(y_val.sum(axis=0))
 
-        print('preds', self.model.preds.get_shape())
-        exit(1)
+        # print('preds', self.model.preds.get_shape())
+        # exit(1)
         self.model.fit(x_train, y_train, validation_data=(x_val, y_val),
-                       epochs=10, batch_size=50)
+                       epochs=2, batch_size=50)
+        self.model.save("discriminator.h5")
 
     def train(self, x_batch, y_batch, batch_size):
         self.model.train_on_batch(x_batch, y_batch, batch_size)

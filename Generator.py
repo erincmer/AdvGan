@@ -28,7 +28,7 @@ class Generator(object):
         self.temperature = 1.0
         self.grad_clip = 5.0
         self.expected_reward = tf.Variable(tf.zeros([self.sequence_length]))
-
+        self.saver = tf.train.Saver()
         self.prev_mem = tf.zeros((batch_size, self.hidden_dim))  # h_{t-1}
         self.enc_inp = tf.placeholder(tf.int32, shape=[batch_size, self.sequence_length],
                                       name="encoderInputs")  # history
@@ -156,26 +156,41 @@ class Generator(object):
         # print("self.rewards.get_shape()): ", self.rewards.get_shape())
         # print("self.baseline.get_shape()): ", self.baseline.get_shape())
 
-        self.g_loss = -tf.reduce_sum(
-            tf.reduce_sum(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 0.0, 1.0) *
+        self.g_loss = -tf.reduce_mean(
+            tf.reduce_mean(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 0.0, 1.0) *
                           tf.log(
-                              tf.clip_by_value(tf.reshape(self.train_outputs[0].rnn_output, [-1, self.num_emb]), 1e-20,
+                              tf.clip_by_value(tf.reshape(tf.nn.softmax(self.train_outputs[0].rnn_output), [-1, self.num_emb]), 1e-20,
                                                1.0)))
-            * tf.reshape(self.rewards, [-1]))
+            * (tf.reshape(self.rewards, [-1]) - tf.reshape(self.baseline, [-1])))
 
         g_opt = self.g_optimizer(self.learning_rate)
         self.g_grad, _ = tf.clip_by_global_norm(tf.gradients(self.g_loss, self.params), self.grad_clip)
         self.g_updates = g_opt.apply_gradients(zip(self.g_grad, self.params))
 
+    def pad_dim(self,input_tensor):
+        padding = tf.tile([[self.end_token]], tf.stack(
+            [tf.shape(input_tensor)[0], self.rep_sequence_length - tf.shape(input_tensor)[1]], 0))
+
+        return tf.concat([input_tensor, padding], 1)
+
     def generate(self, sess, x, y):
         outputs, ids = sess.run([self.pred_output, self.pred_output_ids], feed_dict={self.enc_inp: x, self.labels: y})
-        return outputs, ids
+
+
+        return outputs, self.pad_dim(ids)
 
     def generate_train(self, sess, x, y):
         outputs, ids = sess.run([self.pred_train_output, self.pred_train_output_ids],
                                 feed_dict={self.enc_inp: x, self.labels: y})
         return outputs, ids
 
+    def restore_model(self,sess,savepath):
+        self.saver.restore(sess, tf.train.latest_checkpoint(savepath))
+        return
+    def save_model(self,sess,savepath):
+        self.saver.save(sess, savepath + 'my-model-sentence-sen-1024')
+
+        return
     def assign_emb(self, sess, x):
         sess.run(self.embedding_init, feed_dict={self.embedding_placeholder: x})
         return
@@ -184,6 +199,7 @@ class Generator(object):
         outputs = sess.run([self.pretrain_updates, self.pretrain_loss, self.pred_train_output],
                            feed_dict={self.enc_inp: x, self.labels: y})
         return outputs
+
 
     def advtrain_step(self, sess, history, labels, sentence, rewards, baseline):
         """
