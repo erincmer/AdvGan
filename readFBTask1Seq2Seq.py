@@ -41,15 +41,16 @@ def create_fake_dialogs(neg_can,words,num_fake):
                         train_T.append(sen + " " + s1 + " eoh " + neg_can[s] + " eos ")
                         label_T.append(0)
                         C = C + 1
-                    s = np.random.randint(3, 10)
-                    ranWords = np.random.choice(list(words), s,replace=True)
-                    negSen = ' '.join(ranWords)
-                    if negSen != s2:
-                        train_T.append(sen + " " + s1 + " eoh " + s2 + " eos ")
-                        label_T.append(1)
-                        train_T.append(sen + " " + s1 + " eoh " + negSen + " eos ")
-                        label_T.append(0)
-                        C = C + 1
+                    for _ in range(4):
+                        s = np.random.randint(3, 20)
+                        ranWords = np.random.choice(list(words), s,replace=True)
+                        negSen = ' '.join(ranWords)
+                        if negSen != s2:
+                            train_T.append(sen + " " + s1 + " eoh " + s2 + " eos ")
+                            label_T.append(1)
+                            train_T.append(sen + " " + s1 + " eoh " + negSen + " eos ")
+                            label_T.append(0)
+                    C = C + 1
 
                 sen = sen + " " + s1 + " " + s2
 
@@ -120,7 +121,7 @@ def create_con(create_data,MAX_SEQUENCE_LENGTH = 200,MAX_REP_SEQUENCE_LENGTH = 2
 
 
 
-    num_fake = 1
+    num_fake = 2
 
     if create_data:
 

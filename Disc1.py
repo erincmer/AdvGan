@@ -29,6 +29,7 @@ class DiscSentence(object):
         sequence_input = Input(shape=(self.max_seq_length,), dtype='int32')
         embedded_sequences = self.embedding_layer(sequence_input)
         l_lstm = Bidirectional(LSTM(100, recurrent_dropout=0.3))(embedded_sequences)
+        l_lstm = Dropout(0.3)(l_lstm)
         preds = Dense(2, activation='softmax')(l_lstm)
 
         self.model = Model(sequence_input, preds)
@@ -60,7 +61,7 @@ class DiscSentence(object):
         # print('preds', self.model.preds.get_shape())
         # exit(1)
         self.model.fit(x_train, y_train, validation_data=(x_val, y_val),
-                       epochs=2, batch_size=50)
+                       epochs=2, batch_size=128)
         self.model.save("discriminator.h5")
 
     def train(self, x_batch, y_batch, batch_size):
