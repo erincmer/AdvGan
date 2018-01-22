@@ -71,54 +71,35 @@ class Baseline(object):
             y_batch: expected reward (compute with MC rollout)
             batch_size: batch size
         """
-        for t in range(1, self.rep_seq_length):
-                history_update = np.copy(history)
+        for t in range(1, self.rep_seq_length+1):
+            history_update = np.copy(history)
 
-                # Matrix [batch_size, rep_seq_length]
-                # Line l: the first t elements are sentence[l,0:t]
-                gen_input_t = np.zeros([self.batch_size, self.rep_seq_length])
+            # Matrix [batch_size, rep_seq_length]
+            # Line l: the first t elements are sentence[l,0:t]
+            gen_input_t = np.zeros([self.batch_size, self.rep_seq_length])
 
-                # DEBUG
-                # print("t: ", t)
-                # print("sentence.shape: ", sentence.shape)
-                # print("gen_input_t.shape: ", gen_input_t.shape)
-                # print("gen_input_t[:,0:t].shape: ", gen_input_t[:,0:t].shape)
-                # print("sentence[:,0:t].shape: ", sentence[:,0:t].shape)
+            # DEBUG
+            # print("t: ", t)
+            # print("sentence.shape: ", sentence.shape)
+            # print("gen_input_t.shape: ", gen_input_t.shape)
+            # print("gen_input_t[:,0:t].shape: ", gen_input_t[:,0:t].shape)
+            # print("sentence[:,0:t].shape: ", sentence[:,0:t].shape)
 
-                gen_input_t[:, 0:t] = sentence[:, 0:t]
+            gen_input_t[:, 0:t] = sentence[:, 0:t]
 
-                # Ask gen to output a sentence using the first t tokens
-                # of the complete sentence $sentence
-                # _, complete_sentence = self.generate(sess, history, gen_input_t)
+            # print("word_index['eoh']: ", word_index['eoh'])
+            # print("word_index['eos']: ", word_index['eos'])
+            # print("self.hist_end_token: ", self.hist_end_token)
+            # print("history: ", history)
+            # print("start_insert: ", start_insert)
+            # print("start_insert.shape: ", start_insert.shape)
+            # print("history.shape: ", history.shape)
+            # print("history_update.shape: ", history_update.shape)
+            # print("complete_sentence.shape: ", complete_sentence.shape)
 
-                # Update history with new sentence
-                # TODO: it seems that self.hist_end_token != word_index['eoh'].
-                # Is it ok ?
-                # start_insert = tf.reduce_sum(tf.to_int32(tf.not_equal(history, word_index['eoh'])), 1).eval(
-                #    session=sess)
-                # start_insert = start_insert.reshape(self.batch_size)
-                # start_insert = np.zeros(64)
-
-                # start_insert = np.where(history==word_index['eoh'])
-                # print("word_index['eoh']: ", word_index['eoh'])
-                # print("word_index['eos']: ", word_index['eos'])
-                # print("self.hist_end_token: ", self.hist_end_token)
-                # print("history: ", history)
-                # print("start_insert: ", start_insert)
-                # print("start_insert.shape: ", start_insert.shape)
-                # print("history.shape: ", history.shape)
-                # print("history_update.shape: ", history_update.shape)
-                # print("complete_sentence.shape: ", complete_sentence.shape)
-
-                # TODO: get to insert the sentence into history
-                # history_update = np.insert(history_update, start_insert, complete_sentence, axis=0)
-
-                # Ask disc to reward these sentences
-
-                history_update = self.concat_hist_reply(history_update, gen_input_t, word_index)
-
-                self.model.train_on_batch(history_update, rewards[:,t-1])
-
+            # train step
+            history_update = self.concat_hist_reply(history_update, gen_input_t, word_index)
+            self.model.train_on_batch(history_update, rewards[:,t-1])
 
         self.trained = True
 
@@ -150,66 +131,45 @@ class Baseline(object):
             batch_size:
         """
 
-        rewards = np.zeros([self.batch_size, self.rep_seq_length])
+        baseline = np.zeros([self.batch_size, self.rep_seq_length])
 
         for t in range(1, self.rep_seq_length):
-                history_update = np.copy(history)
+            history_update = np.copy(history)
 
-                # Matrix [batch_size, rep_seq_length]
-                # Line l: the first t elements are sentence[l,0:t]
-                gen_input_t = np.zeros([self.batch_size, self.rep_seq_length])
+            # Matrix [batch_size, rep_seq_length]
+            # Line l: the first t elements are sentence[l,0:t]
+            gen_input_t = np.zeros([self.batch_size, self.rep_seq_length])
 
-                # DEBUG
-                # print("t: ", t)
-                # print("sentence.shape: ", sentence.shape)
-                # print("gen_input_t.shape: ", gen_input_t.shape)
-                # print("gen_input_t[:,0:t].shape: ", gen_input_t[:,0:t].shape)
-                # print("sentence[:,0:t].shape: ", sentence[:,0:t].shape)
+            # DEBUG
+            # print("t: ", t)
+            # print("sentence.shape: ", sentence.shape)
+            # print("gen_input_t.shape: ", gen_input_t.shape)
+            # print("gen_input_t[:,0:t].shape: ", gen_input_t[:,0:t].shape)
+            # print("sentence[:,0:t].shape: ", sentence[:,0:t].shape)
 
-                gen_input_t[:, 0:t] = sentence[:, 0:t]
+            gen_input_t[:, 0:t] = sentence[:, 0:t]
 
-                # Ask gen to output a sentence using the first t tokens
-                # of the complete sentence $sentence
-                # _, complete_sentence = self.generate(sess, history, gen_input_t)
+            # print("word_index['eoh']: ", word_index['eoh'])
+            # print("word_index['eos']: ", word_index['eos'])
+            # print("self.hist_end_token: ", self.hist_end_token)
+            # print("history: ", history)
+            # print("start_insert: ", start_insert)
+            # print("start_insert.shape: ", start_insert.shape)
+            # print("history.shape: ", history.shape)
+            # print("history_update.shape: ", history_update.shape)
+            # print("complete_sentence.shape: ", complete_sentence.shape)
 
-                # Update history with new sentence
-                # TODO: it seems that self.hist_end_token != word_index['eoh'].
-                # Is it ok ?
-                # start_insert = tf.reduce_sum(tf.to_int32(tf.not_equal(history, word_index['eoh'])), 1).eval(
-                #    session=sess)
-                # start_insert = start_insert.reshape(self.batch_size)
-                # start_insert = np.zeros(64)
-
-                # start_insert = np.where(history==word_index['eoh'])
-                # print("word_index['eoh']: ", word_index['eoh'])
-                # print("word_index['eos']: ", word_index['eos'])
-                # print("self.hist_end_token: ", self.hist_end_token)
-                # print("history: ", history)
-                # print("start_insert: ", start_insert)
-                # print("start_insert.shape: ", start_insert.shape)
-                # print("history.shape: ", history.shape)
-                # print("history_update.shape: ", history_update.shape)
-                # print("complete_sentence.shape: ", complete_sentence.shape)
-
-                # TODO: get to insert the sentence into history
-                # history_update = np.insert(history_update, start_insert, complete_sentence, axis=0)
-
-                # Ask disc to reward these sentences
-
-                history_update = self.concat_hist_reply(history_update, gen_input_t, word_index)
-
-                baseline_val= self.model.predict_on_batch(history_update)
-                rewards[:,t-1] = np.squeeze(baseline_val)
-
-        return rewards
-        #         # TODO the input is not ok
-        # if self.trained == False:
-        #     baseline = np.zeros(x_batch.shape)
-        # else:
-        #
-        #     print('get baseline')
+            # Get baseline of these sentences
+            history_update = self.concat_hist_reply(history_update, gen_input_t, word_index)
+            baseline_val= self.model.predict_on_batch(history_update)
+            baseline[:,t-1] = np.squeeze(baseline_val)
 
         return baseline
+        # TODO the input is not ok
+        if self.trained == False:
+            baseline = np.zeros(x_batch.shape)
+        else:
+            print('get baseline')
 
 
 def main():

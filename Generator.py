@@ -236,7 +236,7 @@ class Generator(object):
         """
         rewards = np.zeros([self.batch_size, self.rep_sequence_length])
         for i in range(mc_steps):
-            for t in range(1, self.rep_sequence_length):
+            for t in range(1, self.rep_sequence_length+1):
                 history_update = np.copy(history)
 
                 # Matrix [batch_size, rep_seq_length]
@@ -256,15 +256,6 @@ class Generator(object):
                 # of the complete sentence $sentence
                 _,complete_sentence = self.generate(sess, history, gen_input_t)
 
-                # Update history with new sentence
-                # TODO: it seems that self.hist_end_token != word_index['eoh'].
-                # Is it ok ?
-                #start_insert = tf.reduce_sum(tf.to_int32(tf.not_equal(history, word_index['eoh'])), 1).eval(
-                #    session=sess)
-                #start_insert = start_insert.reshape(self.batch_size)
-                # start_insert = np.zeros(64)
-
-                # start_insert = np.where(history==word_index['eoh'])
                 # print("word_index['eoh']: ", word_index['eoh'])
                 # print("word_index['eos']: ", word_index['eos'])
                 # print("self.hist_end_token: ", self.hist_end_token)
@@ -275,45 +266,21 @@ class Generator(object):
                 # print("history_update.shape: ", history_update.shape)
                 # print("complete_sentence.shape: ", complete_sentence.shape)
 
-                # TODO: get to insert the sentence into history
-                # history_update = np.insert(history_update, start_insert, complete_sentence, axis=0)
-
                 # Ask disc to reward these sentences
-
                 history_update = self.concat_hist_reply(history_update,complete_sentence,word_index)
-
                 disc_proba = discriminator.get_rewards(history_update)
-
-
                 disc_reward = np.array([item[1] for item in disc_proba])
-
+                rewards[:,(t-1)] += disc_reward.reshape(self.batch_size, 1)
+                
                 # print("disc_proba.shape: ", disc_proba.shape)
                 print("disc_rewards.shape: ", disc_reward.shape)
                 # print("rewards[:,t:(t+1)]: ", rewards[:,t:(t+1)].shape)
-
-                # TODO: I tink reward is for till time t
-                # .reshape(self.batch_size, 1)
-                # rewards[:, t:(t + 1)] += disc_reward.reshape(self.batch_size, 1)
-
-
-        ## Reward for the complete sentence
-        # history_update = np.copy(history)
-        # # start_insert = tf.reduce_sum(tf.to_int32(tf.not_equal(history, word_index['eoh'])), 1).eval(session=sess)
-        # # start_insert = start_insert.reshape(self.batch_size)
-        # # TODO
-        # # history_update = np.insert(history, start_insert, complete_sentence, axis=1)
-        # history_update = self.concat_hist_reply(history_update, complete_sentence, word_index)
-        # disc_proba = discriminator.get_rewards(history_update)
-        # disc_reward = np.array([item[1] for item in disc_proba])
-        # t = self.rep_sequence_length - 1
-        # rewards[:, t:(t + 1)] += disc_reward.reshape(self.batch_size, 1)
 
         # At this point, for the i-th sentence in the batch,
         # for t in [0,T-1], rewards[i,t] = \sum_{rollout} R_D(y_{0:t})
         # reward[T] = R_D(y_{0:T})
 
         # Average
-        # rewards = np.transpose(np.array(rewards)) / (1.0 * mc_steps)  # batch_size x seq_length
         rewards = np.array(rewards) / (1.0 * mc_steps)  # batch_size x seq_length
         return rewards
 
