@@ -255,6 +255,7 @@ class Generator(object):
                 # Ask gen to output a sentence using the first t tokens
                 # of the complete sentence $sentence
                 _,complete_sentence = self.generate(sess, history, gen_input_t)
+                complete_sentence[:, 0:t] = sentence[:, 0:t]
 
                 # print("word_index['eoh']: ", word_index['eoh'])
                 # print("word_index['eos']: ", word_index['eos'])
@@ -270,10 +271,10 @@ class Generator(object):
                 history_update = self.concat_hist_reply(history_update,complete_sentence,word_index)
                 disc_proba = discriminator.get_rewards(history_update)
                 disc_reward = np.array([item[1] for item in disc_proba])
-                rewards[:,(t-1)] += disc_reward.reshape(self.batch_size, 1)
+                rewards[:,(t-1)] += disc_reward #disc_reward.reshape(self.batch_size, 1)
                 
                 # print("disc_proba.shape: ", disc_proba.shape)
-                print("disc_rewards.shape: ", disc_reward.shape)
+                #print("disc_rewards.shape: ", disc_reward.shape)
                 # print("rewards[:,t:(t+1)]: ", rewards[:,t:(t+1)].shape)
 
         # At this point, for the i-th sentence in the batch,

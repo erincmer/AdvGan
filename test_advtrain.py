@@ -76,7 +76,8 @@ for ep in range(1):
     for j in range(0, hist_train.shape[0] // BATCH_SIZE):
 
         X = hist_train[idxTrain[j*BATCH_SIZE:(j+1)*BATCH_SIZE],:]
-        Y = reply_train[idxTrain[j*BATCH_SIZE:(j+1)*BATCH_SIZE],:]
+        #Y = reply_train[idxTrain[j*BATCH_SIZE:(j+1)*BATCH_SIZE],:]
+        Y = np.ones((BATCH_SIZE, REP_SEQ_LENGTH)) * word_index['eos']
 
         _,sentence = generator.generate(sess, X, Y)
 

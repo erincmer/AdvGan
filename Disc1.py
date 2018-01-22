@@ -68,7 +68,7 @@ class DiscSentence(object):
 
     def get_rewards(self, x_batch):
         rewards = self.model.predict_on_batch(x_batch)
-        print('get rewards')
+        #print('get rewards')
         return rewards
 
 
