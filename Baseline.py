@@ -99,11 +99,12 @@ class Baseline(object):
 
             # train step
             history_update = self.concat_hist_reply(history_update, gen_input_t, word_index)
-            self.model.train_on_batch(history_update, rewards[:,t-1])
+            output = self.model.train_on_batch(history_update, rewards[:,t-1])
 
         self.trained = True
 
         print('train')
+        return output
 
     def concat_hist_reply(self,histories, replies, word_index):
 

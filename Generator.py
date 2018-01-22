@@ -1,9 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-
 from tensorflow.python.layers import core as layers_core
-
 
 from tensorflow.contrib.seq2seq.python.ops.helper import MonteCarloEmbeddingHelper as MonteCarloHelper
 
@@ -32,9 +30,12 @@ class Generator(object):
         self.expected_reward = tf.Variable(tf.zeros([self.sequence_length]))
 
         self.prev_mem = tf.zeros((batch_size, self.hidden_dim))  # h_{t-1}
-        self.enc_inp = tf.placeholder(tf.int32, shape=[batch_size, self.sequence_length],name="encoderInputs")  # history
-        self.labels = tf.placeholder(tf.int32, shape=[batch_size, self.rep_sequence_length],name="labels")  # expected sentence
-        self.sentence = tf.placeholder(tf.int32, shape=[batch_size, self.rep_sequence_length],name="sentence")  # generated sentence
+        self.enc_inp = tf.placeholder(tf.int32, shape=[batch_size, self.sequence_length],
+                                      name="encoderInputs")  # history
+        self.labels = tf.placeholder(tf.int32, shape=[batch_size, self.rep_sequence_length],
+                                     name="labels")  # expected sentence
+        self.sentence = tf.placeholder(tf.int32, shape=[batch_size, self.rep_sequence_length],
+                                       name="sentence")  # generated sentence
 
         # self.start_tokens = tf.zeros([batch_size],tf.int32)
         self.dec_inp = tf.concat([tf.expand_dims(self.start_tokens, 1), self.labels], 1)
@@ -50,9 +51,10 @@ class Generator(object):
         # rewards[t] : rewards of the first t words of the generated sentence
         # baseline[t] : baseline of the first t words
         # word_proba[t] = p(y_t | X, y_{0:t-1}
-        self.rewards = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length],name = "rewards")
-        self.baseline = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length],name= "baseline")
-        self.word_probas = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length],name="wordprobas")
+        self.rewards = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length], name="rewards")
+        self.baseline = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length], name="baseline")
+        self.word_probas = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length],
+                                          name="wordprobas")
 
         self.rewards = tf.placeholder(tf.float32, shape=[self.batch_size,
                                                          self.rep_sequence_length])  # get from rollout policy and discriminator
@@ -195,7 +197,8 @@ class Generator(object):
         """
         feed_dict = {self.enc_inp: history, self.labels: labels, self.sentence: sentence, self.rewards: rewards,
                      self.baseline: baseline}
-        sess.run([self.g_updates], feed_dict)
+        outputs = sess.run([self.g_updates, self.g_loss], feed_dict)
+        return outputs
 
     def init_matrix(self, shape):
         return tf.random_normal(shape, stddev=0.1)
@@ -203,25 +206,24 @@ class Generator(object):
     def init_vector(self, shape):
         return tf.zeros(shape)
 
+    def concat_hist_reply(self, histories, replies, word_index):
 
-    def concat_hist_reply(self,histories,replies,word_index):
-
-        disc_inp = np.full((self.batch_size,self.sequence_length),word_index['eos'])
+        disc_inp = np.full((self.batch_size, self.sequence_length), word_index['eos'])
         counter = 0
-        for h,r in zip(histories,replies):
+        for h, r in zip(histories, replies):
 
             i = 0
-            while i !=  word_index['eoh'] :
-                disc_inp[counter,i] = h[i]
+            while i != word_index['eoh']:
+                disc_inp[counter, i] = h[i]
                 i = i + 1
 
             disc_inp[counter, i] = word_index['eoh']
 
-            disc_inp[counter, i+1:i+21] = r
+            disc_inp[counter, i + 1:i + 21] = r
             counter = counter + 1
 
-
         return disc_inp
+
     def MC_reward(self, sess, history, sentence, mc_steps, discriminator,
                   word_index):
         """
@@ -236,7 +238,7 @@ class Generator(object):
         """
         rewards = np.zeros([self.batch_size, self.rep_sequence_length])
         for i in range(mc_steps):
-            for t in range(1, self.rep_sequence_length+1):
+            for t in range(1, self.rep_sequence_length + 1):
                 history_update = np.copy(history)
 
                 # Matrix [batch_size, rep_seq_length]
@@ -254,7 +256,7 @@ class Generator(object):
 
                 # Ask gen to output a sentence using the first t tokens
                 # of the complete sentence $sentence
-                _,complete_sentence = self.generate(sess, history, gen_input_t)
+                _, complete_sentence = self.generate(sess, history, gen_input_t)
                 complete_sentence[:, 0:t] = sentence[:, 0:t]
 
                 # print("word_index['eoh']: ", word_index['eoh'])
@@ -268,13 +270,13 @@ class Generator(object):
                 # print("complete_sentence.shape: ", complete_sentence.shape)
 
                 # Ask disc to reward these sentences
-                history_update = self.concat_hist_reply(history_update,complete_sentence,word_index)
+                history_update = self.concat_hist_reply(history_update, complete_sentence, word_index)
                 disc_proba = discriminator.get_rewards(history_update)
                 disc_reward = np.array([item[1] for item in disc_proba])
-                rewards[:,(t-1)] += disc_reward #disc_reward.reshape(self.batch_size, 1)
-                
+                rewards[:, (t - 1)] += disc_reward  # disc_reward.reshape(self.batch_size, 1)
+
                 # print("disc_proba.shape: ", disc_proba.shape)
-                #print("disc_rewards.shape: ", disc_reward.shape)
+                # print("disc_rewards.shape: ", disc_reward.shape)
                 # print("rewards[:,t:(t+1)]: ", rewards[:,t:(t+1)].shape)
 
         # At this point, for the i-th sentence in the batch,
