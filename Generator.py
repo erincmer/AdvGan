@@ -168,8 +168,9 @@ class Generator(object):
         self.g_updates = g_opt.apply_gradients(zip(self.g_grad, self.params))
 
     def pad_dim(self,input_tensor):
-        padding = tf.tile([[self.end_token]], tf.stack(
-            [tf.shape(input_tensor)[0], self.rep_sequence_length - tf.shape(input_tensor)[1]], 0))
+        padding = tf.tile([[0]], tf.stack( [self.batch_size, self.rep_sequence_length - self.output_lengths], 0))
+           # [tf.shape(input_tensor)[0], self.rep_sequence_length - tf.shape(input_tensor)[1]], 0))
+
 
         return tf.concat([input_tensor, padding], 1)
 
@@ -177,7 +178,7 @@ class Generator(object):
         outputs, ids = sess.run([self.pred_output, self.pred_output_ids], feed_dict={self.enc_inp: x, self.labels: y})
 
 
-        return outputs, self.pad_dim(ids)
+        return outputs, ids
 
     def generate_train(self, sess, x, y):
         outputs, ids = sess.run([self.pred_train_output, self.pred_train_output_ids],
@@ -225,8 +226,10 @@ class Generator(object):
     def concat_hist_reply(self, histories, replies, word_index):
 
         disc_inp = np.full((self.batch_size, self.sequence_length), word_index['eos'])
+        rep_inp = np.full((self.batch_size, self.rep_sequence_length), word_index['eos'])
+        rep_inp[:, :replies.shape[1]] = replies
         counter = 0
-        for h, r in zip(histories, replies):
+        for h, r in zip(histories, rep_inp):
 
             i = 0
             while i != word_index['eoh']:
@@ -273,6 +276,10 @@ class Generator(object):
                 # Ask gen to output a sentence using the first t tokens
                 # of the complete sentence $sentence
                 _, complete_sentence = self.generate(sess, history, gen_input_t)
+                rep_inp = np.full((self.batch_size, self.rep_sequence_length), word_index['eos'])
+                rep_inp[:, :complete_sentence.shape[1]] = complete_sentence
+                complete_sentence = rep_inp
+
                 complete_sentence[:, 0:t] = sentence[:, 0:t]
 
                 # print("word_index['eoh']: ", word_index['eoh'])
@@ -288,7 +295,7 @@ class Generator(object):
                 # Ask disc to reward these sentences
                 history_update = self.concat_hist_reply(history_update, complete_sentence, word_index)
                 disc_proba = discriminator.get_rewards(history_update)
-                disc_reward = np.array([item[1] for item in disc_proba])
+                disc_reward = np.array([item[0] for item in disc_proba])
                 rewards[:, (t - 1)] += disc_reward  # disc_reward.reshape(self.batch_size, 1)
 
                 # print("disc_proba.shape: ", disc_proba.shape)

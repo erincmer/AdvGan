@@ -22,6 +22,7 @@ from Baseline import Baseline
 
 def concat_hist_reply( histories, replies, word_index):
     disc_inp = np.full((BATCH_SIZE, MAX_SEQUENCE_LENGTH), word_index['eos'])
+
     counter = 0
     for h, r in zip(histories, replies):
 
@@ -58,7 +59,7 @@ generator = Generator(len(word_index) + 1, BATCH_SIZE, EMB_DIM, HIDDEN_DIM, SEQ_
 discriminator = DiscSentence(SEQ_LENGTH, word_index, embedding_matrix)
 baseline = Baseline(SEQ_LENGTH,REP_SEQ_LENGTH,BATCH_SIZE, word_index, embedding_matrix)
 
-savepath = 'Generator/'  # best is saved here
+savepath = 'GeneratorModel/'  # best is saved here
 
 saver_all = tf.train.Saver()
 
@@ -89,7 +90,7 @@ for ep in range(100):
         X = hist_train[idxTrain[j*BATCH_SIZE:(j+1)*BATCH_SIZE],:]
         Y_train = reply_train[idxTrain[j*BATCH_SIZE:(j+1)*BATCH_SIZE],:]
 
-        if ep<2:
+        if ep<3:
 
             _,g_loss,_ = generator.pretrain_step(sess,X,Y_train)
             if j %100 ==0:
@@ -99,6 +100,10 @@ for ep in range(100):
             Y = np.ones((BATCH_SIZE, REP_SEQ_LENGTH)) * word_index['eos']
 
             _,sentence = generator.generate(sess, X, Y)
+
+            rep_inp = np.full((BATCH_SIZE, REP_SEQ_LENGTH), word_index['eos'])
+            rep_inp[:, :sentence.shape[1]] = sentence
+            sentence = rep_inp
             disc_in = concat_hist_reply(X,sentence,word_index)
 
             disc_rewards = discriminator.get_rewards(disc_in)
