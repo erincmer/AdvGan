@@ -113,7 +113,7 @@ class Baseline(object):
         for h, r in zip(histories, replies):
 
             i = 0
-            while i != word_index['eoh']:
+            while h[i] != word_index['eoh']:
                 disc_inp[counter, i] = h[i]
                 i = i + 1
 

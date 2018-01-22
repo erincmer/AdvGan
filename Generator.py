@@ -232,7 +232,7 @@ class Generator(object):
         for h, r in zip(histories, rep_inp):
 
             i = 0
-            while i != word_index['eoh']:
+            while h[i] != word_index['eoh']:
                 disc_inp[counter, i] = h[i]
                 i = i + 1
 
@@ -279,7 +279,7 @@ class Generator(object):
                 rep_inp = np.full((self.batch_size, self.rep_sequence_length), word_index['eos'])
                 rep_inp[:, :complete_sentence.shape[1]] = complete_sentence
                 complete_sentence = rep_inp
-
+                complete_sentence[complete_sentence == 0] = word_index['eos']
                 complete_sentence[:, 0:t] = sentence[:, 0:t]
 
                 # print("word_index['eoh']: ", word_index['eoh'])
@@ -295,7 +295,7 @@ class Generator(object):
                 # Ask disc to reward these sentences
                 history_update = self.concat_hist_reply(history_update, complete_sentence, word_index)
                 disc_proba = discriminator.get_rewards(history_update)
-                disc_reward = np.array([item[0] for item in disc_proba])
+                disc_reward = np.array([item[1] for item in disc_proba])
                 rewards[:, (t - 1)] += disc_reward  # disc_reward.reshape(self.batch_size, 1)
 
                 # print("disc_proba.shape: ", disc_proba.shape)

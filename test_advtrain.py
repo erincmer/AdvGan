@@ -20,6 +20,16 @@ from Generator import Generator
 from Disc1 import DiscSentence
 from Baseline import Baseline
 
+
+def convert_id_to_text(ids,word_index):
+
+    for id in ids:
+        sen = ""
+        for i in id:
+            if i!=0  and i!= word_index["eos"]:
+                sen = sen +" " +list(word_index.keys())[list(word_index.values()).index(i)]
+        print(sen)
+
 def concat_hist_reply( histories, replies, word_index):
     disc_inp = np.full((BATCH_SIZE, MAX_SEQUENCE_LENGTH), word_index['eos'])
 
@@ -27,7 +37,7 @@ def concat_hist_reply( histories, replies, word_index):
     for h, r in zip(histories, replies):
 
         i = 0
-        while i != word_index['eoh']:
+        while h[i] != word_index['eoh']:
             disc_inp[counter, i] = h[i]
             i = i + 1
 
@@ -40,7 +50,7 @@ def concat_hist_reply( histories, replies, word_index):
 
 
 MAX_SEQUENCE_LENGTH = 200
-embedding_matrix,hist_train,hist_val,reply_train,reply_val,reply_in_train,reply_in_val,x_train,x_test,y_train,y_test,word_index = readFBTask1Seq2Seq.create_con(True,MAX_SEQUENCE_LENGTH)
+embedding_matrix,hist_train,hist_val,reply_train,reply_val,x_train,x_test,y_train,y_test,word_index = readFBTask1Seq2Seq.create_con(True,MAX_SEQUENCE_LENGTH)
 
 EMB_DIM = len(word_index) + 1 # embedding dimension
 HIDDEN_DIM = 250 # hidden state dimension of lstm cell
@@ -81,7 +91,14 @@ loss_t = 0
 
 generator.restore_model(sess,savepath)
 # discriminator.pretrain(x_train,x_test,y_train,y_test)
+# print("before disc restored")
+y_train = to_categorical(np.asarray(y_train))
+y_test = to_categorical(np.asarray(y_test))
+# print(discriminator.model.evaluate(x_test,y_test,verbose = 0))
 discriminator.model = load_model("discriminator.h5")
+
+
+
 for ep in range(100):
     np.random.shuffle(idxTrain)
 
@@ -90,7 +107,7 @@ for ep in range(100):
         X = hist_train[idxTrain[j*BATCH_SIZE:(j+1)*BATCH_SIZE],:]
         Y_train = reply_train[idxTrain[j*BATCH_SIZE:(j+1)*BATCH_SIZE],:]
 
-        if ep<3:
+        if ep<2:
 
             _,g_loss,_ = generator.pretrain_step(sess,X,Y_train)
             if j %100 ==0:
@@ -104,15 +121,29 @@ for ep in range(100):
             rep_inp = np.full((BATCH_SIZE, REP_SEQ_LENGTH), word_index['eos'])
             rep_inp[:, :sentence.shape[1]] = sentence
             sentence = rep_inp
+            sentence[sentence ==0] = word_index['eos']
+
             disc_in = concat_hist_reply(X,sentence,word_index)
 
             disc_rewards = discriminator.get_rewards(disc_in)
+
+            sen_rand = np.random.random_integers(len(word_index), size=(BATCH_SIZE, REP_SEQ_LENGTH))
+            stop_index = np.random.random_integers(REP_SEQ_LENGTH, size=(BATCH_SIZE, 1))
+            for i in range(BATCH_SIZE):
+                sen_rand[i, stop_index[i][0]:] = word_index["eos"]
+
+            disc_in_rand = concat_hist_reply(X,sen_rand,word_index)
+            disc_in_real = concat_hist_reply(X, Y_train, word_index)
+            disc_rewards_rand = discriminator.get_rewards(disc_in_rand)
+            disc_rewards_real = discriminator.get_rewards(disc_in_real)
             print("///////////////////////////////")
-            print("Discriminator Rewards for first 3 Sentence = ", disc_rewards[0:3])
+            print("Discriminator Rewards for MC Sentences = ", disc_rewards[0:3,1])
+            print("Discriminator Rewards for Random Sentences = ", disc_rewards_rand[0:3,1])
+            print("Discriminator Rewards for Real Sentences = ", disc_rewards_real[0:3,1])
             print("///////////////////////////////")
             print("MC sample ids for first 3 Sentence")  # depend
             print(np.array(sentence)[0:3])
-
+            convert_id_to_text(np.array(sentence)[0:3],word_index)
             rewards = generator.MC_reward(sess, X, sentence, MC_NUM, discriminator,word_index)
 
             print("///////////////////////////////")

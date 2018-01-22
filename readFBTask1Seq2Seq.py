@@ -149,6 +149,7 @@ def create_con(create_data,MAX_SEQUENCE_LENGTH = 200,MAX_REP_SEQUENCE_LENGTH = 2
         train_dialogs = all_dialogs[:-1000]
         label_train_dialogs = label_dialogs[:-1000]
 
+        print(label_train_dialogs)
 
         print("number of Training Set ",len(train_histories))
         print("real dialogues")
@@ -189,11 +190,11 @@ def create_con(create_data,MAX_SEQUENCE_LENGTH = 200,MAX_REP_SEQUENCE_LENGTH = 2
 
 
 
-        Train = pad_sequences(tokenizer.texts_to_sequences(train_dialogs), maxlen=MAX_SEQUENCE_LENGTH, padding='post')
+        Train = pad_sequences(tokenizer.texts_to_sequences(train_dialogs), maxlen=MAX_SEQUENCE_LENGTH, padding='post',value= word_index["eos"])
 
 
 
-        Test = pad_sequences(tokenizer.texts_to_sequences(test_dialogs), maxlen=MAX_SEQUENCE_LENGTH, padding='post')
+        Test = pad_sequences(tokenizer.texts_to_sequences(test_dialogs), maxlen=MAX_SEQUENCE_LENGTH, padding='post',value= word_index["eos"])
         print("training token is done")
 
         # print(hist_Train[0:3])
@@ -246,8 +247,7 @@ def create_con(create_data,MAX_SEQUENCE_LENGTH = 200,MAX_REP_SEQUENCE_LENGTH = 2
 
         print("loading finished ")
 
-    return embedding_matrix, np.array(hist_Train),np.array(hist_Test), np.array(rep_Train),np.array(rep_Test),\
-           np.array(rep_in_Train),np.array(rep_in_Test),np.array(Train),np.array(Test), np.array(label_train_dialogs),np.array(label_test_dialogs),word_index
+    return embedding_matrix, np.array(hist_Train),np.array(hist_Test), np.array(rep_Train),np.array(rep_Test),np.array(Train),np.array(Test), np.array(label_train_dialogs),np.array(label_test_dialogs),word_index
 
 if __name__ == "__main__" :
     create_con(True, MAX_SEQUENCE_LENGTH=200, MAX_REP_SEQUENCE_LENGTH=20)
