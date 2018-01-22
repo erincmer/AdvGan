@@ -1,21 +1,15 @@
 
-import random
-
 
 
 import numpy as np
 
 from keras.preprocessing.sequence import pad_sequences
 from keras.preprocessing.text import Tokenizer
-from tensorflow.python.client import device_lib
-import math
+
 
 import pickle
 
-import string
-local_device_protos = device_lib.list_local_devices()
 
-print([x.name for x in local_device_protos if (x.device_type == 'GPU' or x.device_type=='CPU')])
 
 
 def create_dialogs(neg_can,words,num_fake):
@@ -192,4 +186,5 @@ def create_con(create_data,MAX_SEQUENCE_LENGTH = 200,MAX_REP_SEQUENCE_LENGTH = 2
     return embedding_matrix, np.array(hist_Train),np.array(hist_Test), np.array(rep_Train),np.array(rep_Test),\
            np.array(rep_in_Train),np.array(rep_in_Test),word_index
 
-# create_con(True,200)
+if __name__ == "__main__" :
+    create_con(True, MAX_SEQUENCE_LENGTH=200, MAX_REP_SEQUENCE_LENGTH=20)

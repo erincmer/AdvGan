@@ -20,6 +20,7 @@ from Generator import Generator
 from Disc1 import DiscSentence
 from Baseline import Baseline
 
+
 MAX_SEQUENCE_LENGTH = 200
 embedding_matrix,hist_train,hist_val,reply_train,reply_val,reply_in_train,reply_in_val,word_index = readFBTask1Seq2Seq.create_con(True,MAX_SEQUENCE_LENGTH)
 
@@ -38,8 +39,8 @@ MC_NUM = 1
 
 generator = Generator(len(word_index) + 1, BATCH_SIZE, EMB_DIM, HIDDEN_DIM, SEQ_LENGTH,REP_SEQ_LENGTH,START_TOKEN,END_TOKEN,HIST_END_TOKEN)
 discriminator = DiscSentence(SEQ_LENGTH, word_index, embedding_matrix)
-baseline = Baseline(SEQ_LENGTH, word_index, embedding_matrix)
-print(tf.VERSION)
+baseline = Baseline(SEQ_LENGTH,REP_SEQ_LENGTH,BATCH_SIZE, word_index, embedding_matrix)
+
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
@@ -49,6 +50,26 @@ generator.assign_emb(sess,embedding_matrix)
 
 idxTrain = np.arange(len(hist_train))
 loss_t = 0
+
+
+def concat_hist_reply( histories, replies, word_index):
+    disc_inp = np.full((BATCH_SIZE, MAX_SEQUENCE_LENGTH), word_index['eos'])
+    counter = 0
+    for h, r in zip(histories, replies):
+
+        i = 0
+        while i != word_index['eoh']:
+            disc_inp[counter, i] = h[i]
+            i = i + 1
+
+        disc_inp[counter, i] = word_index['eoh']
+
+        disc_inp[counter, i + 1:i + 21] = r
+        counter = counter + 1
+
+    return disc_inp
+
+
 for ep in range(1):
     np.random.shuffle(idxTrain)
 
@@ -58,16 +79,25 @@ for ep in range(1):
         Y = reply_train[idxTrain[j*BATCH_SIZE:(j+1)*BATCH_SIZE],:]
 
         _,sentence = generator.generate(sess, X, Y)
+
         rewards = generator.MC_reward(sess, X, sentence, MC_NUM, discriminator,word_index)
 
+        print(np.array(rewards).shape)
+
+
+
+
+
         # TODO insert new sentence into history
-        start_insert = tf.reduce_sum(tf.to_int32(tf.not_equal(X, word_index['eoh'])), 1).eval(session=sess)
-        start_insert = start_insert.reshape(BATCH_SIZE)
+        # start_insert = tf.reduce_sum(tf.to_int32(tf.not_equal(X, word_index['eoh'])), 1).eval(session=sess)
+        # start_insert = start_insert.reshape(BATCH_SIZE)
         history_update = np.copy(X)
         #history_update = np.insert(history_update, start_insert,complete_sentence, axis=1)
-        b = baseline.get_baseline(history_update)
+        # history_update = concat_hist_reply(history_update, sentence, word_index)
+        b = baseline.get_baseline(history_update,sentence,word_index)
 
-        print(Y.shape)
+        print(b.shape)
+        print(b[0,0])
         #rewards = np.tile(np.arange(REP_SEQ_LENGTH)/(1.0 * REP_SEQ_LENGTH), (64,1))
         #baseline = np.tile(np.arange(REP_SEQ_LENGTH)/(1.0 * REP_SEQ_LENGTH), (64,1))
 
@@ -77,7 +107,7 @@ for ep in range(1):
         # TODO: b has a bad shape
         generator.advtrain_step(sess, X, Y, sentence, rewards, b)
 
-        baseline.train(history_update, rewards)
+        baseline.train(history_update,sentence,rewards,word_index)
 
 
 

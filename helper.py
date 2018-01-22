@@ -520,7 +520,7 @@ class MonteCarloEmbeddingHelper(TrainingHelper):
         if self._end_token.get_shape().ndims != 0:
           raise ValueError("end_token must be a scalar")
         self._start_inputs = self._embedding_fn(self._start_tokens)
-
+        self._end_inputs = self._embedding_fn(self._end_token)
 
         self._sequence_length = ops.convert_to_tensor(sequence_length, name="sequence_length")
         self._softmax_temperature = softmax_temperature
@@ -602,7 +602,7 @@ class MonteCarloEmbeddingHelper(TrainingHelper):
     all_finished = math_ops.reduce_all(finished)
 
     next_inputs = control_flow_ops.cond(
-      all_finished, lambda: self._start_inputs,lambda: maybe_sample(sample_ids,input_finished,base_next_inputs) )
+      all_finished, lambda: self._end_inputs,lambda: maybe_sample(sample_ids,input_finished,base_next_inputs) )
     return (finished, base_next_inputs, state)
   # def sample(self, time, outputs, state, name=None):
   #   """sample for GreedyEmbeddingHelper."""
