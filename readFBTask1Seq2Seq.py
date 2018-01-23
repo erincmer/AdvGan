@@ -32,7 +32,7 @@ def create_fake_dialogs(neg_can,words,num_fake):
 
                 C = 0
 
-                while C < num_fake*2:
+                while C < num_fake:
                     # for s in range(len(neg_can)):
                     s = np.random.randint(0, len(neg_can))
                     if neg_can[s] != s2:
@@ -40,10 +40,19 @@ def create_fake_dialogs(neg_can,words,num_fake):
                         label_T.append(1)
                         train_T.append(sen + " " + s1 + " eoh " + neg_can[s] + " eos ")
                         label_T.append(0)
-                        C = C + 1
+
                     for _ in range(4):
                         s = np.random.randint(3, 20)
                         ranWords = np.random.choice(list(words), s,replace=True)
+                        negSen = ' '.join(ranWords)
+                        if negSen != s2:
+                            train_T.append(sen + " " + s1 + " eoh " + s2 + " eos ")
+                            label_T.append(1)
+                            train_T.append(sen + " " + s1 + " eoh " + negSen + " eos ")
+                            label_T.append(0)
+                    for _ in range(4):
+                        s = np.random.randint(1, len(s2.split()))
+                        ranWords = np.random.choice(list(s2.split()), s,replace=True)
                         negSen = ' '.join(ranWords)
                         if negSen != s2:
                             train_T.append(sen + " " + s1 + " eoh " + s2 + " eos ")
@@ -109,7 +118,6 @@ def create_can():
                 all_text.append(s2)
     all_text.append(" eoh ")
     all_text.append(" eos ")
-    all_text.append(" gogo ")
     all_text.append(" start dialog ")
     f.close()
 

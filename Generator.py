@@ -28,7 +28,7 @@ class Generator(object):
         self.temperature = 1.0
         self.grad_clip = 5.0
         self.expected_reward = tf.Variable(tf.zeros([self.sequence_length]))
-        self.saver = tf.train.Saver()
+
         self.prev_mem = tf.zeros((batch_size, self.hidden_dim))  # h_{t-1}
         self.enc_inp = tf.placeholder(tf.int32, shape=[batch_size, self.sequence_length],
                                       name="encoderInputs")  # history
@@ -66,8 +66,7 @@ class Generator(object):
 
         # Encoder definition
         self.enc_cell = tf.contrib.rnn.GRUCell(self.hidden_dim)
-        self.encoder_outputs, self.encoder_state = tf.nn.dynamic_rnn(self.enc_cell, processed_x, self.input_lengths,
-                                                                     self.prev_mem)
+        self.encoder_outputs, self.encoder_state = tf.nn.dynamic_rnn(self.enc_cell, processed_x, self.input_lengths ,self.prev_mem)
 
         # Decoder definition
         train_helper = tf.contrib.seq2seq.TrainingHelper(processed_y, self.output_lengths_full)
@@ -122,7 +121,10 @@ class Generator(object):
         # tf.identity(self.train_outputs.sample_id[0], name='train_pred')
         # tf.identity(self.train_outputs.rnn_output[0], name='train_pred')
 
-        weights = tf.to_float(tf.not_equal(self.dec_inp[:, :-1], self.end_token))
+        # weights = tf.to_float(tf.not_equal(self.dec_inp[:, :-1], self.end_token))
+
+        weights = tf.to_float(tf.not_equal(self.dec_inp[:, :-1], 400))
+
         # print(self.labels.get_shape())
         # print(weights.get_shape())
         # print(self.train_outputs[0].rnn_output.get_shape())
@@ -142,6 +144,7 @@ class Generator(object):
         self.pred_train_output_ids = self.train_outputs[0].sample_id
 
         self.params = tf.trainable_variables()
+        self.saver = tf.train.Saver(var_list=self.params)
         self.gradients = tf.gradients(self.pretrain_loss, self.params)
         self.clipped_gradients, _ = tf.clip_by_global_norm(self.gradients, self.grad_clip)
 
@@ -157,12 +160,15 @@ class Generator(object):
         # print("self.baseline.get_shape()): ", self.baseline.get_shape())
 
         self.g_loss = -tf.reduce_mean(
-            tf.reduce_mean(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 0.0, 1.0) *
+            tf.reduce_sum(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 0.0, 1.0) *
                           tf.log(
                               tf.clip_by_value(tf.reshape(tf.nn.softmax(self.train_outputs[0].rnn_output), [-1, self.num_emb]), 1e-20,
                                                1.0)))
             * (tf.reshape(self.rewards, [-1]) - tf.reshape(self.baseline, [-1])))
-
+        # self.g_loss = -tf.reduce_sum(
+        #     tf.reduce_mean(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 0.0, 1.0) *tf.log(tf.clip_by_value(tf.reshape(tf.nn.softmax(self.pred_output[0]),
+        #                                                                                                                                         [-1, self.num_emb]), 1e-20,1.0)))
+        #     * (tf.reshape(self.rewards, [-1]) - tf.reshape(self.baseline, [-1])))
         g_opt = self.g_optimizer(self.learning_rate)
         self.g_grad, _ = tf.clip_by_global_norm(tf.gradients(self.g_loss, self.params), self.grad_clip)
         self.g_updates = g_opt.apply_gradients(zip(self.g_grad, self.params))
@@ -200,7 +206,10 @@ class Generator(object):
         outputs = sess.run([self.pretrain_updates, self.pretrain_loss, self.pred_train_output],
                            feed_dict={self.enc_inp: x, self.labels: y})
         return outputs
-
+    def get_pretrain_loss(self, sess, x, y):
+        outputs = sess.run( self.pretrain_loss,
+                           feed_dict={self.enc_inp: x, self.labels: y})
+        return outputs
 
     def advtrain_step(self, sess, history, labels, sentence, rewards, baseline):
         """
@@ -294,10 +303,11 @@ class Generator(object):
 
                 # Ask disc to reward these sentences
                 history_update = self.concat_hist_reply(history_update, complete_sentence, word_index)
-                disc_proba = discriminator.get_rewards(history_update)
+                disc_proba = discriminator.get_rewards(sess,history_update)
                 disc_reward = np.array([item[1] for item in disc_proba])
-                rewards[:, (t - 1)] += disc_reward  # disc_reward.reshape(self.batch_size, 1)
-
+                # rewards[:, (t - 1)] += disc_reward  # disc_reward.reshape(self.batch_size, 1)
+                rewards[:, (t - 1)] += disc_reward * (sentence[:, (t - 1)] != word_index['eos'])
+                # baseline[:, t - 1] = np.squeeze(baseline_val) * (sentence[:, (t - 1)] != word_index['eos'])
                 # print("disc_proba.shape: ", disc_proba.shape)
                 # print("disc_rewards.shape: ", disc_reward.shape)
                 # print("rewards[:,t:(t+1)]: ", rewards[:,t:(t+1)].shape)

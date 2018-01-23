@@ -50,7 +50,7 @@ def concat_hist_reply( histories, replies, word_index):
 
 
 MAX_SEQUENCE_LENGTH = 200
-embedding_matrix,hist_train,hist_val,reply_train,reply_val,x_train,x_test,y_train,y_test,word_index = readFBTask1Seq2Seq.create_con(True,MAX_SEQUENCE_LENGTH)
+embedding_matrix,hist_train,hist_test,reply_train,reply_test,x_train,x_test,y_train,y_test,word_index = readFBTask1Seq2Seq.create_con(True,MAX_SEQUENCE_LENGTH)
 
 EMB_DIM = len(word_index) + 1 # embedding dimension
 HIDDEN_DIM = 250 # hidden state dimension of lstm cell
@@ -66,15 +66,18 @@ MC_NUM = 1
 
 
 generator = Generator(len(word_index) + 1, BATCH_SIZE, EMB_DIM, HIDDEN_DIM, SEQ_LENGTH,REP_SEQ_LENGTH,START_TOKEN,END_TOKEN,HIST_END_TOKEN)
-discriminator = DiscSentence(SEQ_LENGTH, word_index, embedding_matrix)
+discriminator = DiscSentence(len(word_index) + 1, BATCH_SIZE,  EMB_DIM, HIDDEN_DIM,SEQ_LENGTH,word_index, END_TOKEN)
 baseline = Baseline(SEQ_LENGTH,REP_SEQ_LENGTH,BATCH_SIZE, word_index, embedding_matrix)
 
-savepath = 'GeneratorModel/'  # best is saved here
+savepathG = 'GeneratorModel/'  # best is saved here
+savepathD = 'DiscModel/'
 
-saver_all = tf.train.Saver()
 
-if not os.path.exists(savepath):
-    os.makedirs(savepath)
+if not os.path.exists(savepathG):
+    os.makedirs(savepathG)
+if not os.path.exists(savepathD):
+    os.makedirs(savepathD)
+
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
@@ -82,23 +85,62 @@ sess = tf.Session(config=config)
 sess.run(tf.global_variables_initializer())
 generator.assign_emb(sess,embedding_matrix)
 
+discriminator.assign_emb(sess,embedding_matrix)
+
+
+
+
+
+
+#
+try:
+    discriminator.restore_model(sess,savepathD)
+except:
+    print("Disc could not be restored")
+    pass
+try:
+    generator.restore_model(sess, savepathG)
+except:
+    print("Gen could not be restored")
+    pass
+
+
+
+idxTrain = np.arange(len(x_train))
+idxTest = np.arange(len(x_test))
+
+np.random.shuffle(idxTest)
+X = x_test[idxTest[:BATCH_SIZE], :]
+Y_train = y_test[idxTest[:BATCH_SIZE]]
+d_loss, d_acc = discriminator.get_loss(sess, X, Y_train)
+print("Disc Test Loss = ", d_loss, " Accuracy = ", d_acc)
+for ep in range(0):
+    np.random.shuffle(idxTrain)
+
+    for j in range(0, x_train.shape[0] // BATCH_SIZE):
+        # print("*********************************")
+        X = x_train[idxTrain[j*BATCH_SIZE:(j+1)*BATCH_SIZE],:]
+        Y_train = y_train[idxTrain[j*BATCH_SIZE:(j+1)*BATCH_SIZE]]
+
+
+
+        _,d_loss,d_acc,_ = discriminator.train_step(sess,X,Y_train)
+
+        if j %50==0:
+                print("Disc Train Loss = ", d_loss, " Accuracy = ",d_acc)
+                np.random.shuffle(idxTest)
+                X = x_test[idxTest[:BATCH_SIZE],:]
+                Y_train = y_test[idxTest[:BATCH_SIZE]]
+                d_loss,d_acc= discriminator.get_loss(sess, X, Y_train)
+                print("Disc Test Loss = ", d_loss, " Accuracy = ",d_acc)
+                discriminator.save_model(sess, savepathD)
+
+
+
 
 
 idxTrain = np.arange(len(hist_train))
-loss_t = 0
-
-
-
-generator.restore_model(sess,savepath)
-# discriminator.pretrain(x_train,x_test,y_train,y_test)
-# print("before disc restored")
-y_train = to_categorical(np.asarray(y_train))
-y_test = to_categorical(np.asarray(y_test))
-# print(discriminator.model.evaluate(x_test,y_test,verbose = 0))
-discriminator.model = load_model("discriminator.h5")
-
-
-
+idxTest = np.arange(len(hist_test))
 for ep in range(100):
     np.random.shuffle(idxTrain)
 
@@ -111,8 +153,21 @@ for ep in range(100):
 
             _,g_loss,_ = generator.pretrain_step(sess,X,Y_train)
             if j %100 ==0:
-                generator.save_model(sess, savepath)
-                print(g_loss)
+
+                print("Gen Train Loss = ", g_loss)
+                X = hist_test[idxTest[: BATCH_SIZE], :]
+                Y_test = reply_test[idxTest[: BATCH_SIZE], :]
+                g_loss = generator.get_pretrain_loss(sess, X, Y_test)
+                print("Gen Test Loss = ", g_loss)
+                generator.save_model(sess, savepathG)
+
+                _, sentence = generator.generate(sess, X, Y_test)
+                sentence[sentence == 0] = word_index['eos']
+                print("Generator Predicted Sentences")
+                convert_id_to_text(np.array(sentence)[0:5], word_index)
+                print("Real Sentences")
+                convert_id_to_text(np.array(Y_test)[0:5], word_index)
+
         else:
             Y = np.ones((BATCH_SIZE, REP_SEQ_LENGTH)) * word_index['eos']
 
@@ -125,7 +180,7 @@ for ep in range(100):
 
             disc_in = concat_hist_reply(X,sentence,word_index)
 
-            disc_rewards = discriminator.get_rewards(disc_in)
+            disc_rewards = discriminator.get_rewards(sess,disc_in)
 
             sen_rand = np.random.random_integers(len(word_index), size=(BATCH_SIZE, REP_SEQ_LENGTH))
             stop_index = np.random.random_integers(REP_SEQ_LENGTH, size=(BATCH_SIZE, 1))
@@ -134,8 +189,9 @@ for ep in range(100):
 
             disc_in_rand = concat_hist_reply(X,sen_rand,word_index)
             disc_in_real = concat_hist_reply(X, Y_train, word_index)
-            disc_rewards_rand = discriminator.get_rewards(disc_in_rand)
-            disc_rewards_real = discriminator.get_rewards(disc_in_real)
+            disc_rewards_rand = discriminator.get_rewards(sess,disc_in_rand)
+            # disc_rewards_real = discriminator.get_rewards(disc_in_real)
+            disc_rewards_real = discriminator.get_rewards(sess,disc_in_real)
             print("///////////////////////////////")
             print("Discriminator Rewards for MC Sentences = ", disc_rewards[0:3,1])
             print("Discriminator Rewards for Random Sentences = ", disc_rewards_rand[0:3,1])
@@ -166,3 +222,4 @@ for ep in range(100):
             print("///////////////////////////////")
             baseline_loss = baseline.train(X,sentence,rewards,word_index)
             print("Baseline Loss = " , baseline_loss)
+            # input("wait")
