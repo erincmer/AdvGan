@@ -111,7 +111,7 @@ class Generator(object):
 
                 outputs = tf.contrib.seq2seq.dynamic_decode(
                     decoder=decoder, output_time_major=False,
-                    impute_finished=True, maximum_iterations=self.rep_sequence_length
+                    impute_finished=False, maximum_iterations=self.rep_sequence_length
                 )
                 return outputs
 
@@ -137,7 +137,7 @@ class Generator(object):
         #
         # self.pretrain_loss = (tf.reduce_sum(crossent * weights) /
         #               batch_size)
-        self.pred_output = self.gen_x[0].rnn_output
+        self.pred_output = tf.nn.softmax(self.gen_x[0].rnn_output)
         self.pred_train_output = self.train_outputs[0].rnn_output
 
         self.pred_output_ids = self.gen_x[0].sample_id
@@ -252,6 +252,19 @@ class Generator(object):
 
         return disc_inp
 
+    def convert_id_to_text(self,ids, word_index):
+
+
+            sen = ""
+            sen_list = []
+            for id in ids:
+                for i in id:
+                    if i != 0 and i != word_index["eos"]:
+                        sen = sen + " " + list(word_index.keys())[list(word_index.values()).index(i)]
+                sen_list.append(sen)
+                sen = ""
+            return sen_list
+
     def MC_reward(self, sess, history, sentence, mc_steps, discriminator,
                   word_index):
         """
@@ -284,7 +297,7 @@ class Generator(object):
 
                 # Ask gen to output a sentence using the first t tokens
                 # of the complete sentence $sentence
-                _, complete_sentence = self.generate(sess, history, gen_input_t)
+                _, complete_sentence = self.generate(sess, history_update, gen_input_t)
                 rep_inp = np.full((self.batch_size, self.rep_sequence_length), word_index['eos'])
                 rep_inp[:, :complete_sentence.shape[1]] = complete_sentence
                 complete_sentence = rep_inp
@@ -302,11 +315,20 @@ class Generator(object):
                 # print("complete_sentence.shape: ", complete_sentence.shape)
 
                 # Ask disc to reward these sentences
+                # print("Sampled Sentence for ----",self.convert_id_to_text(gen_input_t[0],word_index)," ----- is = ",self.convert_id_to_text(complete_sentence[0],word_index))
                 history_update = self.concat_hist_reply(history_update, complete_sentence, word_index)
                 disc_proba = discriminator.get_rewards(sess,history_update)
                 disc_reward = np.array([item[1] for item in disc_proba])
+                # print("Reward for Complete Sentence ----- ", self.convert_id_to_text(complete_sentence[0], word_index), " ----- is = ",disc_reward[0])
                 # rewards[:, (t - 1)] += disc_reward  # disc_reward.reshape(self.batch_size, 1)
+
                 rewards[:, (t - 1)] += disc_reward * (sentence[:, (t - 1)] != word_index['eos'])
+                print("History for Complete Sentence ----- "," is -------",self.convert_id_to_text(history_update[0:3], word_index))
+                print("Sampled Sentence for ----", self.convert_id_to_text(gen_input_t[0:3], word_index),
+                          " ----- is = ", self.convert_id_to_text(complete_sentence[0:3], word_index))
+                print("Reward for Complete Sentence ----- ",
+                          self.convert_id_to_text(complete_sentence[0:3], word_index), " ----- is = ", disc_reward[0:3])
+
                 # baseline[:, t - 1] = np.squeeze(baseline_val) * (sentence[:, (t - 1)] != word_index['eos'])
                 # print("disc_proba.shape: ", disc_proba.shape)
                 # print("disc_rewards.shape: ", disc_reward.shape)

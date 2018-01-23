@@ -48,7 +48,7 @@ def concat_hist_reply( histories, replies, word_index):
 
     return disc_inp
 
-
+np.set_printoptions(precision=5,suppress=True,linewidth=250)
 MAX_SEQUENCE_LENGTH = 200
 embedding_matrix,hist_train,hist_test,reply_train,reply_test,x_train,x_test,y_train,y_test,word_index = readFBTask1Seq2Seq.create_con(True,MAX_SEQUENCE_LENGTH)
 
@@ -62,7 +62,7 @@ HIST_END_TOKEN = word_index.get("eoh")
 PRE_EPOCH_NUM = 120 # supervise (maximum likelihood estimation) epochs
 SEED = 88
 BATCH_SIZE = 64
-MC_NUM = 1
+MC_NUM = 3
 
 
 generator = Generator(len(word_index) + 1, BATCH_SIZE, EMB_DIM, HIDDEN_DIM, SEQ_LENGTH,REP_SEQ_LENGTH,START_TOKEN,END_TOKEN,HIST_END_TOKEN)
@@ -99,6 +99,7 @@ except:
     print("Disc could not be restored")
     pass
 try:
+
     generator.restore_model(sess, savepathG)
 except:
     print("Gen could not be restored")
@@ -142,23 +143,25 @@ for ep in range(0):
 idxTrain = np.arange(len(hist_train))
 idxTest = np.arange(len(hist_test))
 for ep in range(100):
-    np.random.shuffle(idxTrain)
+    # np.random.shuffle(idxTrain)
 
     for j in range(0, hist_train.shape[0] // BATCH_SIZE):
         # print("*********************************")
+        j = 0 # TODO: remove it when training Generator
+
         X = hist_train[idxTrain[j*BATCH_SIZE:(j+1)*BATCH_SIZE],:]
         Y_train = reply_train[idxTrain[j*BATCH_SIZE:(j+1)*BATCH_SIZE],:]
 
-        if ep<2:
+        if ep<0:
 
             _,g_loss,_ = generator.pretrain_step(sess,X,Y_train)
-            if j %100 ==0:
+            if j %1000 ==0:
 
-                print("Gen Train Loss = ", g_loss)
+                print("Gen Train Loss = ", g_loss, ep)
                 X = hist_test[idxTest[: BATCH_SIZE], :]
                 Y_test = reply_test[idxTest[: BATCH_SIZE], :]
                 g_loss = generator.get_pretrain_loss(sess, X, Y_test)
-                print("Gen Test Loss = ", g_loss)
+                print("Gen Test Loss = ", g_loss,ep)
                 generator.save_model(sess, savepathG)
 
                 _, sentence = generator.generate(sess, X, Y_test)
@@ -169,16 +172,35 @@ for ep in range(100):
                 convert_id_to_text(np.array(Y_test)[0:5], word_index)
 
         else:
+            print("*********************************")
             Y = np.ones((BATCH_SIZE, REP_SEQ_LENGTH)) * word_index['eos']
 
-            _,sentence = generator.generate(sess, X, Y)
+
+            gen_proba,sentence = generator.generate(sess, X, Y)
+            convert_id_to_text(np.array(sentence)[0:1,:], word_index)
+            # convert_id_to_text(np.array(Y_train)[0:1, :], word_index)
+            gen_proba = np.array(gen_proba)
+
+            gen_proba = gen_proba[0, :, :]
+            print(sentence[0, :])
+            print(gen_proba[np.arange(len(gen_proba)), sentence[0, :]])
+            # print(gen_proba[0,1, sentence[0,1]])
+
+
+            X_one =np.tile(np.copy(X[0,:]),(BATCH_SIZE,1))
+
+
+            Sen_one = np.tile(np.copy(sentence[0, :]), (BATCH_SIZE, 1))
+
+            sentence = Sen_one
+
 
             rep_inp = np.full((BATCH_SIZE, REP_SEQ_LENGTH), word_index['eos'])
             rep_inp[:, :sentence.shape[1]] = sentence
             sentence = rep_inp
             sentence[sentence ==0] = word_index['eos']
 
-            disc_in = concat_hist_reply(X,sentence,word_index)
+            disc_in = concat_hist_reply(X_one,sentence,word_index)
 
             disc_rewards = discriminator.get_rewards(sess,disc_in)
 
@@ -200,7 +222,10 @@ for ep in range(100):
             print("MC sample ids for first 3 Sentence")  # depend
             print(np.array(sentence)[0:3])
             convert_id_to_text(np.array(sentence)[0:3],word_index)
-            rewards = generator.MC_reward(sess, X, sentence, MC_NUM, discriminator,word_index)
+            print("CORRECT SENTENCE")
+            convert_id_to_text(Y_train[0:1,:], word_index)
+
+            rewards = generator.MC_reward(sess, X_one, sentence, MC_NUM, discriminator,word_index)
 
             print("///////////////////////////////")
             print("MC Rewards for first 3 Sentence")  # depend
