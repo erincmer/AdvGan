@@ -9,7 +9,7 @@ from tensorflow.contrib.seq2seq.python.ops.helper import MonteCarloEmbeddingHelp
 class Generator(object):
     def __init__(self, num_emb, batch_size, emb_dim, hidden_dim,
                  sequence_length, rep_sequence_length, start_token, end_token, hist_end_token,
-                 learning_rate=0.000004, reward_gamma=1.00):
+                 learning_rate=0.00004, reward_gamma=1.00):
 
         self.num_emb = num_emb  # vocab size
         self.batch_size = batch_size
@@ -20,6 +20,7 @@ class Generator(object):
         self.end_token = end_token
         self.hist_end_token = end_token
         self.start_tokens = tf.constant([start_token] * self.batch_size, dtype=tf.int32)
+        self.end_tokens = tf.constant([end_token] * self.batch_size, dtype=tf.int32)
         self.start_tokens_check = tf.constant([start_token + 5] * self.batch_size, dtype=tf.int32)
         # self.start_token = tf.constant([start_token] * self.batch_size, dtype=tf.int32)
         self.learning_rate = tf.Variable(float(learning_rate), trainable=False)
@@ -75,11 +76,11 @@ class Generator(object):
         #
         # pred_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
         #     self.g_embeddings, start_tokens=tf.to_int32(self.start_tokens), end_token=200)
-        pred_helper = MonteCarloHelper(processed_y, self.output_lengths,self.output_lengths_full, self.g_embeddings,
-                                       start_tokens=tf.to_int32(self.start_tokens), end_token=self.end_token,
+        pred_helper = MonteCarloHelper(processed_y, self.output_lengths_full,self.output_lengths_full, self.g_embeddings,
+                                       start_tokens=tf.to_int32(self.start_tokens),end_token =self.end_token,  end_tokens=tf.to_int32(self.end_tokens),
                                        softmax_temperature=self.temperature, seed=1881)
 
-        # pred_helper = tf.contrib.seq2seq.TrainingHelper(processed_y, self.output_lengths_full)
+        # # pred_helper = tf.contrib.seq2seq.TrainingHelper(processed_y, self.output_lengths_full)
         # train_helper = tf.contrib.seq2seq.ScheduledEmbeddingTrainingHelper(
         #     processed_y, self.output_lengths_full,
         #     self.g_embeddings,
@@ -235,7 +236,6 @@ class Generator(object):
                      self.baseline: baseline}
         outputs = sess.run([self.g_part0,self.g_part1,self.g_part2,self.g_part3,self.g_part4, self.g_loss], feed_dict)
         return outputs
-
     def advtrain_step(self, sess, history, labels, sentence, rewards, baseline):
         """
         Computes sentence from given history and compute loss given reward and
@@ -250,60 +250,6 @@ class Generator(object):
                      self.baseline: baseline}
         outputs = sess.run([self.g_updates, self.g_loss], feed_dict)
         return outputs
-
-    def advtrain_step_debug(self, sess, history, labels, sentence, rewards, baseline, word_index, old_proba):
-        """
-        Computes sentence from given history and compute loss given reward and
-        baseline
-        Args:
-            sess: tf session
-            sentence: sentence output by generator
-            rewards:
-            baseline
-        """
-
-        feed_dict = {self.enc_inp: history, self.labels: labels, self.sentence: sentence, self.rewards: rewards, self.baseline: baseline} #, self.word_probas:gen_proba}
-
-        print("output sentence duing gen: ", sentence.shape)
-        print("history: ", history.shape)
-        print("expected reply: ", labels.shape)
-        print("rewards: ", rewards.shape)
-        #print("\nold proba: ", gen_proba.shape)
-        print("new proba shape: ", self.pred_output.get_shape())
- 
-        outputs = sess.run([self.pred_output, self.pred_output_ids, self.sentence, self.rewards, self.baseline, self.g_updates, self.g_loss], feed_dict)
-
-        new_proba = outputs[0]
-        new_sentence = outputs[1] 
-        old_sentence = outputs[2]
-        new_rewards = outputs[3]
-        old_baseline = outputs[4]
-        loss = outputs[6]
-
-        print("old _sentence: ", sentence[0,:])
-        print("new sentence: ", new_sentence[0,:])
-        print("old rewards: ", rewards[0,:])
-        print("new rewards: ", new_rewards[0,:])
-        #print("\nold proba: ", gen_proba[0,:])
-        #print("\nnew proba: ", new_proba[0,:])
-
-        rep_inp = np.full((self.batch_size, self.rep_sequence_length), word_index['eos'])
-        rep_inp[:, :new_sentence.shape[1]] = new_sentence
-        new_sentence = rep_inp
-        new_sentence[new_sentence ==0] = word_index['eos']
-
-        np.savetxt("./log/old_sentence_id.txt", sentence, fmt='%d', delimiter=",")
-        np.savetxt("./log/new_sentence_id.txt", new_sentence, fmt='%d', delimiter=",")
-        np.savetxt("./log/new_proba.txt", np.reshape(new_proba, [-1]), fmt='%.4f', delimiter=",")
-        np.savetxt("./log/old_proba.txt", np.reshape(old_proba,[-1]), fmt='%.4f', delimiter=",")
-
-        diff_proba = np.sum(np.abs(new_proba - old_proba))
-        print("diff proba: ", diff_proba)
-
-
-
-        return outputs
-
 
     def init_matrix(self, shape):
         return tf.random_normal(shape, stddev=0.1)
@@ -401,7 +347,8 @@ class Generator(object):
                 # print("Reward for Complete Sentence ----- ", self.convert_id_to_text(complete_sentence[0], word_index), " ----- is = ",disc_reward[0])
                 # rewards[:, (t - 1)] += disc_reward  # disc_reward.reshape(self.batch_size, 1)
 
-                rewards[:, (t - 1)] += disc_reward #* (sentence[:, (t - 1)] != word_index['eos'])
+                rewards[:, (t - 1)] += disc_reward \
+                                       # * (sentence[:, (t - 1)] != word_index['eos'])
                 # print("History for Complete Sentence ----- "," is -------",self.convert_id_to_text(history_update[0:3], word_index))
                 # print("Sampled Sentence for ----", self.convert_id_to_text(gen_input_t[0:3], word_index),
                 #           " ----- is = ", self.convert_id_to_text(complete_sentence[0:3], word_index))
