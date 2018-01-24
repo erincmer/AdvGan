@@ -9,7 +9,6 @@ from keras.models import Model
 from keras import backend as K
 from keras.engine.topology import Layer, InputSpec
 import tensorflow as tf
-import readFBTask1
 
 MAX_SEQ_LENGTH = 200
 

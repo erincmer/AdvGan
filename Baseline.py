@@ -167,8 +167,7 @@ class Baseline(object):
             baseline_val= self.model.predict_on_batch(history_update)
             # baseline[:,t-1] = np.squeeze(baseline_val)
 
-            baseline[:, t - 1] = np.squeeze(baseline_val) \
-                                 # * (sentence[:, (t - 1)] != word_index['eos'])
+            baseline[:, t - 1] = np.squeeze(baseline_val) #* (sentence[:, (t - 1)] != word_index['eos'])
 
         return baseline
         # TODO the input is not ok
