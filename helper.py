@@ -530,10 +530,9 @@ class MonteCarloEmbeddingHelper(TrainingHelper):
         self._input_tas = nest.map_structure(_unstack_ta, inputs)
         self._zero_inputs = nest.map_structure(
           lambda inp: array_ops.zeros_like(inp[0, :]), inputs)
-        print(self._zero_inputs.get_shape())
-        print(self._end_inputs.get_shape())
-        print(self._start_inputs.get_shape())
-        input("wait")
+        # print(self._zero_inputs.get_shape())
+        # print(self._end_inputs.get_shape())
+        # print(self._start_inputs.get_shape())
         self._batch_size = array_ops.size(sequence_length)
         super(MonteCarloEmbeddingHelper, self).__init__(
             inputs=inputs,
