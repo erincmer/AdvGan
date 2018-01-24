@@ -99,7 +99,9 @@ class Baseline(object):
 
             # train step
             history_update = self.concat_hist_reply(history_update, gen_input_t, word_index)
-            output = self.model.train_on_batch(history_update, rewards[:,t-1])
+            output = self.model.train_on_batch(history_update, rewards[:, t-1])
+            output = self.model.train_on_batch(history_update, rewards[:, t - 1])
+            # output = self.model.train_on_batch(history_update, rewards[:,t-1])
 
         self.trained = True
 
@@ -134,7 +136,7 @@ class Baseline(object):
 
         baseline = np.zeros([self.batch_size, self.rep_seq_length])
 
-        for t in range(1, self.rep_seq_length):
+        for t in range(1, self.rep_seq_length+1):
             history_update = np.copy(history)
 
             # Matrix [batch_size, rep_seq_length]
@@ -163,7 +165,10 @@ class Baseline(object):
             # Get baseline of these sentences
             history_update = self.concat_hist_reply(history_update, gen_input_t, word_index)
             baseline_val= self.model.predict_on_batch(history_update)
-            baseline[:,t-1] = np.squeeze(baseline_val)
+            # baseline[:,t-1] = np.squeeze(baseline_val)
+
+            baseline[:, t - 1] = np.squeeze(baseline_val) \
+                                 # * (sentence[:, (t - 1)] != word_index['eos'])
 
         return baseline
         # TODO the input is not ok

@@ -69,6 +69,8 @@ generator = Generator(len(word_index) + 1, BATCH_SIZE, EMB_DIM, HIDDEN_DIM, SEQ_
 discriminator = DiscSentence(len(word_index) + 1, BATCH_SIZE,  EMB_DIM, HIDDEN_DIM,SEQ_LENGTH,word_index, END_TOKEN)
 baseline = Baseline(SEQ_LENGTH,REP_SEQ_LENGTH,BATCH_SIZE, word_index, embedding_matrix)
 
+# print(word_index)
+# input("wait")
 savepathG = 'GeneratorModel/'  # best is saved here
 savepathD = 'DiscModel/'
 
@@ -174,34 +176,42 @@ for ep in range(100):
         else:
             print("*********************************")
             Y = np.ones((BATCH_SIZE, REP_SEQ_LENGTH)) * word_index['eos']
+            X_one = np.tile(np.copy(X[0, :]), (BATCH_SIZE, 1))
+            convert_id_to_text(np.array(X_one)[0:3, :], word_index)
 
 
-            gen_proba,sentence = generator.generate(sess, X, Y)
-            convert_id_to_text(np.array(sentence)[0:1,:], word_index)
+            gen_proba,sentence = generator.generate(sess, X_one, Y)
+            print("FULL SAMPLED SENTENCES")
+            convert_id_to_text(np.array(sentence)[:,:], word_index)
+            sentence_old = np.copy(np.array(sentence))
             # convert_id_to_text(np.array(Y_train)[0:1, :], word_index)
+
             gen_proba = np.array(gen_proba)
 
-            gen_proba = gen_proba[0, :, :]
+            gen_proba = gen_proba[1, :, :]
+            print("SENTENCES WITH CHOSING WORD PROBABILITIES")
             print(sentence[0, :])
             print(gen_proba[np.arange(len(gen_proba)), sentence[0, :]])
+            # input("wait 1")
             # print(gen_proba[0,1, sentence[0,1]])
 
 
-            X_one =np.tile(np.copy(X[0,:]),(BATCH_SIZE,1))
+            # X_one =np.tile(np.copy(X[0,:]),(BATCH_SIZE,1))
 
 
-            Sen_one = np.tile(np.copy(sentence[0, :]), (BATCH_SIZE, 1))
-
-            sentence = Sen_one
-
-
-            rep_inp = np.full((BATCH_SIZE, REP_SEQ_LENGTH), word_index['eos'])
-            rep_inp[:, :sentence.shape[1]] = sentence
-            sentence = rep_inp
-            sentence[sentence ==0] = word_index['eos']
+            # Sen_one = np.tile(np.copy(sentence[0, :]), (BATCH_SIZE, 1))
+            #
+            # sentence = Sen_one
+            #
+            #
+            # rep_inp = np.full((BATCH_SIZE, REP_SEQ_LENGTH), word_index['eos'])
+            # rep_inp[:, :sentence.shape[1]] = sentence
+            # sentence = rep_inp
+            # sentence[sentence ==0] = word_index['eos']
 
             disc_in = concat_hist_reply(X_one,sentence,word_index)
-
+            # print(X_one[0:3,])
+            # input("wait 2 ")
             disc_rewards = discriminator.get_rewards(sess,disc_in)
 
             sen_rand = np.random.random_integers(len(word_index), size=(BATCH_SIZE, REP_SEQ_LENGTH))
@@ -230,21 +240,67 @@ for ep in range(100):
             print("///////////////////////////////")
             print("MC Rewards for first 3 Sentence")  # depend
             print(np.array(rewards)[0:3])
+            # input("wait 3 ")
 
+            baseline_loss = baseline.train(X_one, sentence, rewards, word_index)
 
-
-            b = baseline.get_baseline(X,sentence,word_index)
+            b = baseline.get_baseline(X_one,sentence,word_index)
 
             print("///////////////////////////////")
             print("Baseline Rewards for first 3 Sentence")  # depend
             print(np.array(b)[0:3])
 
-
-            _,adv_loss =generator.advtrain_step(sess, X, Y, sentence, rewards, b)
-
-            print("///////////////////////////////")
-            print("Adverserial Loss = " , adv_loss)
-            print("///////////////////////////////")
-            baseline_loss = baseline.train(X,sentence,rewards,word_index)
             print("Baseline Loss = " , baseline_loss)
+            part0,part1,part2,part3,part4,part5 = generator.get_adv_loss(sess, X_one, Y, sentence, rewards, b)
+            #
+            #
+            # print("one hot encoding")
+            # print(np.array(part0).shape)
+            # print(np.array(part0)[20:23, :])
+            # print("logarithm of action probs")
+            # print(np.array(part1).shape)
+            # print(np.array(part1)[0:3, :])
+            # print(np.argmax(np.array(part1)[0:3, :],1))
+            # print(np.array(part1)[20:23, :])
+            # print(np.argmax(np.array(part1)[20:23, :],1))
+            print("log action multiplied by one hot encoding ")
+            print(np.array(part2).shape)
+            print(np.array(part2)[626:628,:]) # since word 627 is wrong
+            print("reduce sum  ")
+            print(np.array(part3).shape)
+            print(np.array(part3)[626:628])
+            # # input("wait")
+            #
+            # # c
+            # # print(part5)
+            # #
+            #
+            #
+            #
+            # print(np.array(part4)[20:23])
+            _,adv_loss =generator.advtrain_step(sess, X_one, Y, sentence, rewards, b)
+            # input("wait")
+            print("///////////////////////////////")
+            print("adv loss = " , adv_loss[620:640])
+            print(np.argmax(adv_loss))
+            # print("Adverserial Loss = " , adv_loss[:20])
+            # print("Adverserial Loss = ", adv_loss[20:40])
+            # print("Adverserial Loss = ", adv_loss[40:60])
+            # print("Adverserial Loss = ", adv_loss[60:80])
+
+            print("///////////////////////////////AFTER UPDATE/////////////////////////////")
+            convert_id_to_text(np.array(X_one)[0:5, :], word_index)
+            gen_proba,sentence = generator.generate(sess, X_one, Y)
+            convert_id_to_text(np.array(sentence)[0:5,:], word_index)
+            # convert_id_to_text(np.array(Y_train)[0:1, :], word_index)
+
+            gen_proba = np.array(gen_proba)
+
+            gen_proba = gen_proba[1, :, :]
+            print(sentence[1, :])
+            print(gen_proba[np.arange(len(gen_proba)), sentence_old[0, :]])
+
+            print("///////////////////////////////AFTER UPDATE/////////////////////////////")
+            input("wait")
+
             # input("wait")

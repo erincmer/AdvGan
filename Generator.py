@@ -75,7 +75,7 @@ class Generator(object):
         #
         # pred_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
         #     self.g_embeddings, start_tokens=tf.to_int32(self.start_tokens), end_token=200)
-        pred_helper = MonteCarloHelper(processed_y, self.output_lengths, self.g_embeddings,
+        pred_helper = MonteCarloHelper(processed_y, self.output_lengths,self.output_lengths_full, self.g_embeddings,
                                        start_tokens=tf.to_int32(self.start_tokens), end_token=self.end_token,
                                        softmax_temperature=self.temperature, seed=1881)
 
@@ -159,12 +159,23 @@ class Generator(object):
         # print("self.rewards.get_shape()): ", self.rewards.get_shape())
         # print("self.baseline.get_shape()): ", self.baseline.get_shape())
 
-        self.g_loss = -tf.reduce_mean(
-            tf.reduce_sum(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 0.0, 1.0) *
-                          tf.log(
-                              tf.clip_by_value(tf.reshape(tf.nn.softmax(self.train_outputs[0].rnn_output), [-1, self.num_emb]), 1e-20,
-                                               1.0)))
-            * (tf.reshape(self.rewards, [-1]) - tf.reshape(self.baseline, [-1])))
+        self.g_loss = tf.reduce_sum(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0) *
+                                    tf.log(
+                              tf.clip_by_value(tf.reshape(tf.nn.softmax(self.gen_x[0].rnn_output), [-1, self.num_emb]), 1e-20,
+                                               1.0)),1)* (tf.reshape(self.rewards, [-1]) - tf.reshape(self.baseline, [-1]))
+
+        self.g_part0 =  tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0)
+
+        self.g_part1 =  tf.clip_by_value(tf.nn.softmax(tf.reshape(self.gen_x[0].rnn_output, [-1, self.num_emb])), 1e-20,1.0)
+
+        self.g_part2 = tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0) * tf.log(
+                              tf.clip_by_value(tf.reshape(tf.nn.softmax(self.gen_x[0].rnn_output), [-1, self.num_emb]), 1e-20,
+                                               1.0))
+        self.g_part3 = tf.reduce_sum(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0) *tf.log(
+                              tf.clip_by_value(tf.reshape(tf.nn.softmax(self.gen_x[0].rnn_output), [-1, self.num_emb]), 1e-20,
+                                               1.0)),1)
+        self.g_part4 = (tf.reshape(self.rewards, [-1]) - tf.reshape(self.baseline, [-1]))
+
         # self.g_loss = -tf.reduce_sum(
         #     tf.reduce_mean(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 0.0, 1.0) *tf.log(tf.clip_by_value(tf.reshape(tf.nn.softmax(self.pred_output[0]),
         #                                                                                                                                         [-1, self.num_emb]), 1e-20,1.0)))
@@ -210,7 +221,20 @@ class Generator(object):
         outputs = sess.run( self.pretrain_loss,
                            feed_dict={self.enc_inp: x, self.labels: y})
         return outputs
-
+    def get_adv_loss(self, sess, history, labels, sentence, rewards, baseline):
+        """
+        Computes sentence from given history and compute loss given reward and
+        baseline
+        Args:
+            sess: tf session
+            sentence: sentence output by generator
+            rewards:
+            baseline
+        """
+        feed_dict = {self.enc_inp: history, self.labels: labels, self.sentence: sentence, self.rewards: rewards,
+                     self.baseline: baseline}
+        outputs = sess.run([self.g_part0,self.g_part1,self.g_part2,self.g_part3,self.g_part4, self.g_loss], feed_dict)
+        return outputs
     def advtrain_step(self, sess, history, labels, sentence, rewards, baseline):
         """
         Computes sentence from given history and compute loss given reward and
@@ -322,12 +346,13 @@ class Generator(object):
                 # print("Reward for Complete Sentence ----- ", self.convert_id_to_text(complete_sentence[0], word_index), " ----- is = ",disc_reward[0])
                 # rewards[:, (t - 1)] += disc_reward  # disc_reward.reshape(self.batch_size, 1)
 
-                rewards[:, (t - 1)] += disc_reward * (sentence[:, (t - 1)] != word_index['eos'])
-                print("History for Complete Sentence ----- "," is -------",self.convert_id_to_text(history_update[0:3], word_index))
-                print("Sampled Sentence for ----", self.convert_id_to_text(gen_input_t[0:3], word_index),
-                          " ----- is = ", self.convert_id_to_text(complete_sentence[0:3], word_index))
-                print("Reward for Complete Sentence ----- ",
-                          self.convert_id_to_text(complete_sentence[0:3], word_index), " ----- is = ", disc_reward[0:3])
+                rewards[:, (t - 1)] += disc_reward \
+                                       # * (sentence[:, (t - 1)] != word_index['eos'])
+                # print("History for Complete Sentence ----- "," is -------",self.convert_id_to_text(history_update[0:3], word_index))
+                # print("Sampled Sentence for ----", self.convert_id_to_text(gen_input_t[0:3], word_index),
+                #           " ----- is = ", self.convert_id_to_text(complete_sentence[0:3], word_index))
+                # print("Reward for Complete Sentence ----- ",
+                #           self.convert_id_to_text(complete_sentence[0:3], word_index), " ----- is = ", disc_reward[0:3])
 
                 # baseline[:, t - 1] = np.squeeze(baseline_val) * (sentence[:, (t - 1)] != word_index['eos'])
                 # print("disc_proba.shape: ", disc_proba.shape)
