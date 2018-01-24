@@ -188,10 +188,10 @@ for ep in range(100):
 
             gen_proba = np.array(gen_proba)
 
-            gen_proba = gen_proba[1, :, :]
+            gen_proba = gen_proba[31, :, :]
             print("SENTENCES WITH CHOSING WORD PROBABILITIES")
-            print(sentence[0, :])
-            print(gen_proba[np.arange(len(gen_proba)), sentence[0, :]])
+            print(sentence[31, :])
+            print(gen_proba[np.arange(len(gen_proba)), sentence[31, :]])
             # input("wait 1")
             # print(gen_proba[0,1, sentence[0,1]])
 
@@ -225,13 +225,13 @@ for ep in range(100):
             # disc_rewards_real = discriminator.get_rewards(disc_in_real)
             disc_rewards_real = discriminator.get_rewards(sess,disc_in_real)
             print("///////////////////////////////")
-            print("Discriminator Rewards for MC Sentences = ", disc_rewards[0:3,1])
+            print("Discriminator Rewards for MC Sentences = ", disc_rewards[30:33,1])
             print("Discriminator Rewards for Random Sentences = ", disc_rewards_rand[0:3,1])
             print("Discriminator Rewards for Real Sentences = ", disc_rewards_real[0:3,1])
             print("///////////////////////////////")
             print("MC sample ids for first 3 Sentence")  # depend
-            print(np.array(sentence)[0:3])
-            convert_id_to_text(np.array(sentence)[0:3],word_index)
+            print(np.array(sentence)[30:33])
+            convert_id_to_text(np.array(sentence)[30:33],word_index)
             print("CORRECT SENTENCE")
             convert_id_to_text(Y_train[0:1,:], word_index)
 
@@ -239,7 +239,7 @@ for ep in range(100):
 
             print("///////////////////////////////")
             print("MC Rewards for first 3 Sentence")  # depend
-            print(np.array(rewards)[0:3])
+            print(np.array(rewards)[30:33])
             # input("wait 3 ")
 
             baseline_loss = baseline.train(X_one, sentence, rewards, word_index)
@@ -248,7 +248,7 @@ for ep in range(100):
 
             print("///////////////////////////////")
             print("Baseline Rewards for first 3 Sentence")  # depend
-            print(np.array(b)[0:3])
+            print(np.array(b)[30:33])
 
             print("Baseline Loss = " , baseline_loss)
             part0,part1,part2,part3,part4,part5 = generator.get_adv_loss(sess, X_one, Y, sentence, rewards, b)
@@ -281,24 +281,24 @@ for ep in range(100):
             _,adv_loss =generator.advtrain_step(sess, X_one, Y, sentence, rewards, b)
             # input("wait")
             print("///////////////////////////////")
-            print("adv loss = " , adv_loss[620:640])
-            print(np.argmax(adv_loss))
+            # print("adv loss = " , adv_loss[620:640])
+            # print(np.argmax(adv_loss))
             # print("Adverserial Loss = " , adv_loss[:20])
             # print("Adverserial Loss = ", adv_loss[20:40])
             # print("Adverserial Loss = ", adv_loss[40:60])
             # print("Adverserial Loss = ", adv_loss[60:80])
 
             print("///////////////////////////////AFTER UPDATE/////////////////////////////")
-            convert_id_to_text(np.array(X_one)[0:5, :], word_index)
+            convert_id_to_text(np.array(X_one)[30:33, :], word_index)
             gen_proba,sentence = generator.generate(sess, X_one, Y)
-            convert_id_to_text(np.array(sentence)[0:5,:], word_index)
+            convert_id_to_text(np.array(sentence)[30:33,:], word_index)
             # convert_id_to_text(np.array(Y_train)[0:1, :], word_index)
 
             gen_proba = np.array(gen_proba)
 
-            gen_proba = gen_proba[1, :, :]
-            print(sentence[1, :])
-            print(gen_proba[np.arange(len(gen_proba)), sentence_old[0, :]])
+            gen_proba = gen_proba[31, :, :]
+            print(sentence[31, :])
+            print(gen_proba[np.arange(len(gen_proba)), sentence_old[31, :]])
 
             print("///////////////////////////////AFTER UPDATE/////////////////////////////")
             input("wait")

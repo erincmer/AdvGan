@@ -9,7 +9,7 @@ from tensorflow.contrib.seq2seq.python.ops.helper import MonteCarloEmbeddingHelp
 class Generator(object):
     def __init__(self, num_emb, batch_size, emb_dim, hidden_dim,
                  sequence_length, rep_sequence_length, start_token, end_token, hist_end_token,
-                 learning_rate=0.0004, reward_gamma=1.00):
+                 learning_rate=0.000004, reward_gamma=1.00):
 
         self.num_emb = num_emb  # vocab size
         self.batch_size = batch_size
@@ -159,10 +159,10 @@ class Generator(object):
         # print("self.rewards.get_shape()): ", self.rewards.get_shape())
         # print("self.baseline.get_shape()): ", self.baseline.get_shape())
 
-        self.g_loss = tf.reduce_sum(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0) *
+        self.g_loss = -tf.reduce_sum(tf.reduce_sum(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0) *
                                     tf.log(
                               tf.clip_by_value(tf.reshape(tf.nn.softmax(self.gen_x[0].rnn_output), [-1, self.num_emb]), 1e-20,
-                                               1.0)),1)* (tf.reshape(self.rewards, [-1]) - tf.reshape(self.baseline, [-1]))
+                                               1.0)),1)* (tf.reshape(self.rewards, [-1]) - tf.reshape(self.baseline, [-1])))
 
         self.g_part0 =  tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0)
 
