@@ -488,7 +488,7 @@ class MonteCarloEmbeddingHelper(TrainingHelper):
   result through an embedding layer to get the next input.
   """
 
-  def __init__(self, inputs,sequence_length,full_sequence_length,embedding, start_tokens, end_token,sampling_probability = 1.0,time_major=False,softmax_temperature=None, seed=None,name = None):
+  def __init__(self, inputs,sequence_length,full_sequence_length,embedding, start_tokens,end_token, end_tokens,sampling_probability = 1.0,time_major=False,softmax_temperature=None, seed=None,name = None):
     """Initializer.
 
     Args:
@@ -509,18 +509,19 @@ class MonteCarloEmbeddingHelper(TrainingHelper):
         else:
           self._embedding_fn = (
               lambda ids: embedding_ops.embedding_lookup(embedding, ids))
-
+        self._end_token = ops.convert_to_tensor(
+        end_token, dtype=dtypes.int32, name="end_token")
         self._start_tokens = ops.convert_to_tensor(
             start_tokens, dtype=dtypes.int32, name="start_tokens")
-        self._end_token = ops.convert_to_tensor(
-            end_token, dtype=dtypes.int32, name="end_token")
+        self._end_tokens = ops.convert_to_tensor(
+            end_tokens, dtype=dtypes.int32, name="end_token")
         if self._start_tokens.get_shape().ndims != 1:
           raise ValueError("start_tokens must be a vector")
         self._batch_size = array_ops.size(start_tokens)
         if self._end_token.get_shape().ndims != 0:
           raise ValueError("end_token must be a scalar")
         self._start_inputs = self._embedding_fn(self._start_tokens)
-        self._end_inputs = self._embedding_fn(self._end_token)
+        self._end_inputs = self._embedding_fn(self._end_tokens)
 
         self._sequence_length = ops.convert_to_tensor(sequence_length, name="sequence_length")
         self._full_sequence_length = ops.convert_to_tensor(full_sequence_length, name="full_sequence_length")
@@ -529,7 +530,10 @@ class MonteCarloEmbeddingHelper(TrainingHelper):
         self._input_tas = nest.map_structure(_unstack_ta, inputs)
         self._zero_inputs = nest.map_structure(
           lambda inp: array_ops.zeros_like(inp[0, :]), inputs)
-
+        print(self._zero_inputs.get_shape())
+        print(self._end_inputs.get_shape())
+        print(self._start_inputs.get_shape())
+        input("wait")
         self._batch_size = array_ops.size(sequence_length)
         super(MonteCarloEmbeddingHelper, self).__init__(
             inputs=inputs,
@@ -567,18 +571,21 @@ class MonteCarloEmbeddingHelper(TrainingHelper):
         logits = outputs
     else:
         logits = outputs / self._softmax_temperature
-    select_sampler = bernoulli.Bernoulli(
-        probs=1.0, dtype=dtypes.bool)
-    select_sample = select_sampler.sample(
-        sample_shape=self.batch_size, seed=self._seed)
+    # select_sampler = bernoulli.Bernoulli(
+    #     probs=1.0, dtype=dtypes.bool)
+    # select_sample = select_sampler.sample(
+    #     sample_shape=self.batch_size, seed=self._seed)
 
+    # sample_id_sampler = categorical.Categorical(logits=logits)
+    # sample_ids = sample_id_sampler.sample(seed=self._seed)
+    # return array_ops.where(
+    #     select_sample,
+    #     sample_id_sampler.sample(seed=self._seed),
+    #     gen_array_ops.fill([self.batch_size], -1))
+    #
     sample_id_sampler = categorical.Categorical(logits=logits)
     sample_ids = sample_id_sampler.sample(seed=self._seed)
-    return array_ops.where(
-        select_sample,
-        sample_id_sampler.sample(seed=self._seed),
-        gen_array_ops.fill([self.batch_size], -1))
-    # return sample_ids
+    return sample_ids
 
   #
   #
@@ -606,8 +613,10 @@ class MonteCarloEmbeddingHelper(TrainingHelper):
     # all_finished = math_ops.reduce_all(finished)
 
     next_inputs = control_flow_ops.cond(
-      all_finished, lambda: self._end_inputs,lambda: maybe_sample(sample_ids,input_finished,base_next_inputs) )
-    return (finished, base_next_inputs, state)
+      all_finished, lambda: self._end_inputs,lambda: maybe_sample(sample_ids,input_finished,base_next_inputs))
+        # lambda: maybe_sample(sample_ids,input_finished,base_next_inputs) )
+
+    return (finished, next_inputs, state)
   # def sample(self, time, outputs, state, name=None):
   #   """sample for GreedyEmbeddingHelper."""
   #   del time, state  # unused by sample_fn
