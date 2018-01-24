@@ -488,7 +488,7 @@ class MonteCarloEmbeddingHelper(TrainingHelper):
   result through an embedding layer to get the next input.
   """
 
-  def __init__(self, inputs,sequence_length,embedding, start_tokens, end_token,sampling_probability = 1.0,time_major=False,softmax_temperature=None, seed=None,name = None):
+  def __init__(self, inputs,sequence_length,full_sequence_length,embedding, start_tokens, end_token,sampling_probability = 1.0,time_major=False,softmax_temperature=None, seed=None,name = None):
     """Initializer.
 
     Args:
@@ -523,6 +523,7 @@ class MonteCarloEmbeddingHelper(TrainingHelper):
         self._end_inputs = self._embedding_fn(self._end_token)
 
         self._sequence_length = ops.convert_to_tensor(sequence_length, name="sequence_length")
+        self._full_sequence_length = ops.convert_to_tensor(full_sequence_length, name="full_sequence_length")
         self._softmax_temperature = softmax_temperature
         self._seed = seed
         self._input_tas = nest.map_structure(_unstack_ta, inputs)
@@ -598,8 +599,11 @@ class MonteCarloEmbeddingHelper(TrainingHelper):
             input_finished, lambda: self._embedding_fn(sample_ids), lambda:base_next_inputs  )
         return next_inputs
     input_finished = math_ops.reduce_all(finished)
-    finished = math_ops.equal(sample_ids, self._end_token)
+    next_time = time + 1
+    finished = (next_time >= self._full_sequence_length)
     all_finished = math_ops.reduce_all(finished)
+    # finished = math_ops.equal(sample_ids, self._end_token)
+    # all_finished = math_ops.reduce_all(finished)
 
     next_inputs = control_flow_ops.cond(
       all_finished, lambda: self._end_inputs,lambda: maybe_sample(sample_ids,input_finished,base_next_inputs) )
