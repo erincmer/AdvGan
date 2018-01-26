@@ -32,19 +32,20 @@ def create_fake_dialogs(neg_can ,words ,num_fake):
             s2=  x[1].rstrip( )  # sentence 2 'hello what can i help you with today'
 
             # Get rid of api_call
-            if s2.split()[0] == 'api_call':
-                continue
+            # if s2.split()[0] == 'api_call':
+            #     continue
 
             C = 0
-            while C < num_fake:
+            while C < num_fake and "api_call" not in s2:
                 # Choose randomly another sentence in the dataset instead of
                 # the ground truth one
-                s = np.random.randint(0, len(neg_can))
-                if neg_can[s] != s2:
-                    train_T.append(sen + " " + s1 +  " eoh " + s2 + " eos ")
-                    label_T.append(1)
-                    train_T.append(sen + " " + s1 + " eoh " + neg_can[s] + " eos ")
-                    label_T.append(0)
+                cansAns = np.random.choice(len(neg_can), 6, replace=False)
+                for s in cansAns :
+                    if neg_can[s] != s2  :
+                        train_T.append(sen + " " + s1 +  " eoh " + s2 + " eos ")
+                        label_T.append(1)
+                        train_T.append(sen + " " + s1 + " eoh " + neg_can[s] + " eos ")
+                        label_T.append(0)
 
 
                 for _ in range(2):
@@ -71,7 +72,7 @@ def create_fake_dialogs(neg_can ,words ,num_fake):
                         label_T.append(1)
                         train_T.append(sen + " " + s1 + " eoh " + negSen + " eos ")
                         label_T.append(0)
-
+                #
                 # print("\nRandom shuffle")
                 # print("s2: ", s2)
                 repeat = []
@@ -88,8 +89,8 @@ def create_fake_dialogs(neg_can ,words ,num_fake):
                     label_T.append(1)
                     train_T.append(sen + " " + s1 + " eoh " + negSen + " eos ")
                     label_T.append(0)
-                # print("\nRandom repeat")
-                # print("s2: ", s2)
+                # # print("\nRandom repeat")
+                # # print("s2: ", s2)
                 repeat = []
                 for _ in range(2):
                     # Select randomly a token and pad the end sentence with it
@@ -127,7 +128,7 @@ def create_fake_dialogs(neg_can ,words ,num_fake):
                     label_T.append(1)
                     train_T.append(sen + " " + s1 + " eoh " + negSen + " eos ")
                     label_T.append(0)
-
+                #
                 # print("\nRandom repeat maximum with new word")
                 # print("s2: ", s2)
                 repeat = []
@@ -155,7 +156,7 @@ def create_fake_dialogs(neg_can ,words ,num_fake):
 
                 C = C + 1
 
-                sen = sen + " " + s1 + " " + s2
+            sen = sen + " " + s1 + " " + s2
 
     f.close()
     return train_T,label_T
@@ -226,9 +227,9 @@ def create_can():
         if (len(x) > 1):
             s1 = x[0][x[0].find(" ") + 1:].  rstrip() # sentence 1 'hi'
             s2 = x[1].  rstrip() # sentence 2 'hello what can i help you with today'
-            if s1 not in neg_can:
-                neg_can.append(s1)
-                all_text.append(s1)
+            # if s1 not in neg_can:
+                # neg_can.append(s1)
+            all_text.append(s1)
             if s2 not in neg_can:
                 # Get rid of api_call
                 if s2.split()[0] != 'api_call':
@@ -286,7 +287,7 @@ def create_con( create_data,MAX_SEQUENCE_LENGTH = 200,MAX_REP_SEQUENCE_LENGTH = 
         train_dialogs = all_dialogs[:-1000]  # (cust, rest)
         label_train_dialogs = label_dialogs[:-1000]  # (is rest true or not)
 
-        #print(label_train_dialogs)
+        print(label_train_dialogs)
         print("number of Disc Training Set ",len(train_dialogs))
         print("number of Seq2Seq Training Set ", len(train_histories))
         print("real dialogues")
@@ -333,6 +334,7 @@ def create_con( create_data,MAX_SEQUENCE_LENGTH = 200,MAX_REP_SEQUENCE_LENGTH = 
         # print(hist_Train[0:3])
         # print(rep_Train[0:3])
         # input("wait")
+
         with open('emb_Task1.pickle', 'wb') as output:
             pickle.dump(embedding_matrix, output ,protocol=4)
         with open('histTrain_Task1.pickle', 'wb') as output:
@@ -341,45 +343,37 @@ def create_con( create_data,MAX_SEQUENCE_LENGTH = 200,MAX_REP_SEQUENCE_LENGTH = 
             pickle.dump(hist_Test, output, protocol=4)
         with open('repTrain_Task1.pickle', 'wb') as output:
             pickle.dump(rep_Train, output, protocol=4)
+        # with open('repInTrain_Task1.pickle', 'wb') as output:
+        #        pickle.dump(rep_in_Train, output, protocol=4)
+
         with open('repTest_Task1.pickle', 'wb') as output:
             pickle.dump(rep_Test, output, protocol=4)
-        with open('Train.pickle', 'wb') as output:
-                pickle.dump(Train, output, protocol=4)
-        with open('Test.pickle', 'wb') as output:
-                pickle.dump(Test, output, protocol=4)
-        with open('label_train_dialogs.pickle', 'wb') as output:
-            pickle.dump(label_train_dialogs, output, protocol=4)
-        with open('label_test_dialogs.pickle', 'wb') as output:
-            pickle.dump(label_test_dialogs, output, protocol=4)
+        # with open('repInTest_Task1.pickle', 'wb') as output:
+        #        pickle.dump(rep_in_Test, output, protocol=4)
         with open('wi_Task1.pickle', 'wb') as output:
             pickle.dump(word_index, output, protocol=4)
-
         print("saving finished ")
 
     else:
         with open('emb_Task1.pickle', 'rb') as output:
             embedding_matrix =pickle.load(output)
+
         with open('histTrain_Task1.pickle', 'rb') as output:
             hist_Train = pickle.load(output)
         with open('histTest_Task1.pickle', 'rb') as output:
             hist_Test = pickle.load(output)
         with open('repTrain_Task1.pickle', 'rb') as output:
             rep_Train = pickle.load(output)
+        # with open('repInTrain_Task1.pickle', 'rb') as output:
+        #    rep_in_Train =pickle.load(output)
         with open('repTest_Task1.pickle', 'rb') as output:
             rep_Test = pickle.load(output)
-        with open('Train.pickle', 'rb') as output:
-            Train =pickle.load(output)
-        with open('Test.pickle', 'rb') as output:
-            Test = pickle.load(output)
-        with open('label_train_dialogs.pickle', 'rb') as output:
-            label_train_dialogs = pickle.load(output)
-        with open('label_test_dialogs.pickle', 'rb') as output:
-            label_test_dialogs = pickle.load(output)
+        # with open('repInTest_Task1.pickle', 'rb') as output:
+        #    rep_in_Test = pickle.load(output)
         with open('wi_Task1.pickle', 'rb') as output:
             word_index = pickle.load(output)
 
         print("loading finished ")
-
 
     # embedding matrix: ?
     # hist_train: history (..., cust)
