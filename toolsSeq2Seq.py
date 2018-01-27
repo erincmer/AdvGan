@@ -25,7 +25,7 @@ def convert_id_to_text(ids,word_index):
     for id in ids:
         sen = ""
         for i in id:
-            if i!=0  and i!= word_index["eos"]:
+            if i!=0  and i!= word_index["eos"] and i!=word_index['eoh']:
                 sen = sen +" " +list(word_index.keys())[list(word_index.values()).index(i)]
         print(sen)
 

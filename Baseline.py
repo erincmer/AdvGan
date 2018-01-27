@@ -9,6 +9,8 @@ import readFBTask1Seq2Seq
 import toolsSeq2Seq
 import headerSeq2Seq
 
+# Set to true to allow debug printing
+DEBUG = True
 
 class Baseline(object):
     def __init__(self,batch_size, hidden_dim, rep_seq_length, 
@@ -83,20 +85,6 @@ class Baseline(object):
             zip(self.clipped_gradients, self.params))
 
 
-
-    #def get_rewards(self,sess, x):
-    #    rewards = sess.run(self.pred_train_output,
-    #                       feed_dict={self.enc_inp: x})
-    #    #print('get rewards')
-    #    return rewards
-    #
-    #def get_loss(self,sess, x,y):
-    #    loss,acc = sess.run([self.loss],
-    #                       feed_dict={self.enc_inp: x, self.labels: y})
-    #    #print('get rewards')
-    #    return loss,acc
-    
-
     def restore_model(self,sess,savepath):
         """
         Save pre trained model
@@ -128,23 +116,38 @@ class Baseline(object):
         Compute baseline
         """
         baseline = np.zeros([self.batch_size, self.rep_seq_length])
-        for t in range(1, sentence.shape[1]):
+        print("eos token: ", word_index['eos'])
+        for t in range(0, sentence.shape[1]):
             history_update = np.copy(X)
-            gen_input_t = np.zeros([headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH])
-            gen_input_t[:,0:t-1] = sentence[:,0:t-1]
+            gen_input_t = np.ones([headerSeq2Seq.BATCH_SIZE, 
+                headerSeq2Seq.REP_SEQ_LENGTH]) * word_index['eos']
+            gen_input_t[:,0:t] = sentence[:,0:t]
             history_update = toolsSeq2Seq.concat_hist_reply(history_update,
                     gen_input_t, word_index)
-            b_mask = (sentence[:,(t-1)] !=
+            b_mask = (sentence[:,t] !=
                     word_index['eos']).astype(np.float32)
-            # test mask
-            print("b_mask.shape: ", b_mask.shape)
-            print("b_mask[0,:]: ", b_mask)
-            print("sentence tokens: \n", sentence[:,(t-1)])
-            toolsSeq2Seq.convert_id_to_text(np.array(sentence)[0:3], word_index)
-            
             b_tmp = sess.run([self.b],
                            feed_dict={self.enc_inp: X})
-            baseline[:, t - 1] = np.squeeze(b_tmp)
+            
+            baseline[:, t] = np.squeeze(np.array(b_tmp)) * b_mask
+            
+            #if DEBUG:
+            #    print("get_baseline")
+            #    print("t: ", t)
+            #    print("b_mask[0,:]: ", b_mask[0]) # mask at timestep t for all sentences
+            #    print("t-th token: ", sentence[0,t])
+            #    print("t-th token: ",
+            #            list(word_index.keys())[list(word_index.values()).index(sentence[0,t])] )
+            #    print("History: ")
+            #    toolsSeq2Seq.convert_id_to_text(np.array(X)[0:1], word_index)
+            #    print("Sentence")
+            #    toolsSeq2Seq.convert_id_to_text(np.array(sentence)[0:1], word_index)
+
+            #    print("Baseline: ", np.squeeze(np.array(b_tmp))[0])
+            #    print(baseline[:, t - 1].shape)
+            #    print(np.squeeze(np.array(b_tmp).shape))
+            #    input("wait")
+            
 
         return baseline
 
@@ -170,19 +173,27 @@ class Baseline(object):
         """
         loss = 0
         # train
-        for t in range(1, sentence.shape[1]):
+        for t in range(0, sentence.shape[1]):
             history_update = np.copy(X)
-            gen_input_t = np.zeros([headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH])
-            gen_input_t[:,0:t-1] = sentence[:,0:t-1]
+            gen_input_t = np.ones([headerSeq2Seq.BATCH_SIZE, 
+                headerSeq2Seq.REP_SEQ_LENGTH]) * word_index['eos']
+            gen_input_t[:,0:t] = sentence[:,0:t]
             history_update = toolsSeq2Seq.concat_hist_reply(history_update,
                     gen_input_t, word_index)
-            b_mask = (sentence[:,(t-1)] !=
+            b_mask = (sentence[:,t] !=
                     word_index['eos']).astype(np.float32)
-            # test mask
-            print("b_mask.shape: ", b_mask.shape)
-            print("b_mask[0,:]: ", b_mask)
-            print("sentence tokens: \n", sentence[:,(t-1)])
-            toolsSeq2Seq.convert_id_to_text(np.array(sentence)[0:3], word_index)
+ 
+            if DEBUG:
+                print("get_baseline")
+                print("t: ", t)
+                print("b_mask[0,:]: ", b_mask[0]) # mask at timestep t for all sentences
+                print("t-th token: ", sentence[0,t])
+                print("t-th token: ",
+                        list(word_index.keys())[list(word_index.values()).index(sentence[0,t])] )
+                print("History: ")
+                toolsSeq2Seq.convert_id_to_text(np.array(X)[0:1], word_index)
+                print("Sentence")
+                toolsSeq2Seq.convert_id_to_text(np.array(sentence)[0:1], word_index)
 
             loss  += self.train_step(sess, history_update, rewards[:,t-1], b_mask)
 

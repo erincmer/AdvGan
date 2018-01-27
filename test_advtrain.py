@@ -176,10 +176,11 @@ for ep in range(0, 1000000):
 
         b_loss = baseline.train(sess, X_one, sentence, word_index, rewards)
         b = baseline.get_baseline(sess, X_one, sentence, word_index)
-        print("baseline baby !: ", b)
-        print("baseline loss: ", b_loss)
+        print("baseline baby !: ", b[0,:])
+        #print("baseline loss: ", b_loss)
         #b = np.tile(np.mean(np.array(rewards), axis=0), (headerSeq2Seq.BATCH_SIZE, 1))
         # toolsSeq2Seq.convert_id_reward_to_text(np.array(sentence)[0:10],disc_rewards[:10,1],rewards[:10],b[:10],word_index)
+        toolsSeq2Seq.convert_id_to_text(np.array(sentence)[0:1],word_index)
 
 
 
