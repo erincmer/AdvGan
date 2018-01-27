@@ -1,190 +1,287 @@
 import numpy as np
 import os
-from keras.utils.np_utils import to_categorical
 
-from keras.layers import Embedding
-from keras.layers import Dense, Input, Flatten
-from keras.layers import Conv1D, MaxPooling1D, Embedding, Merge, Dropout, LSTM, GRU, Bidirectional
-from keras.models import Model
-from keras import backend as K
-from keras.engine.topology import Layer, InputSpec
+import tensorflow as tf
 
-
-MAX_SEQ_LENGTH = 200
+from Generator import Generator
+from Disc1 import DiscSentence
+import readFBTask1Seq2Seq
+import toolsSeq2Seq
+import headerSeq2Seq
 
 
 class Baseline(object):
-    def __init__(self, max_seq_length,rep_seq_length,batch_size, word_index, embedding_matrix):
-        self.trained = True  # Has the baseline been trained once ?
-        self.batch_size = batch_size
-        self.max_seq_length = max_seq_length
-        self.rep_seq_length = rep_seq_length
-        self.word_index = word_index
-        self.embedding_matrix = embedding_matrix
+    def __init__(self,batch_size, hidden_dim, rep_seq_length, 
+                 max_seq_length, word_index, learning_rate=0.0004):
+        """
+        Args:
+            batch_size: 
+            hidden_dim: hidden state dimension
+            max_seq_length: max dialogue length
+            word_index: token index dictionnary
+        """
+        self.batch_size = batch_size # 64
+        self.rep_seq_length = rep_seq_length # 200
+        self.max_seq_length = max_seq_length # 200
+        self.hidden_dim = hidden_dim # 250
+        self.word_index = word_index #token dict
         self.embedding_dim = len(word_index) + 1
-        self.embedding_layer = Embedding(len(word_index) + 1,
-                                         self.embedding_dim,
-                                         weights=[self.embedding_matrix],
-                                         input_length=self.max_seq_length,
-                                         trainable=True)
+        self.end_token = word_index.get("eos")
+        
+        # Set embedding
+        self.d_embeddings = tf.Variable(
+                tf.constant(0.0, shape=[self.embedding_dim, self.embedding_dim]),
+                trainable=False, name="W")
+        self.embedding_placeholder = tf.placeholder(
+                tf.float32, [self.embedding_dim, self.embedding_dim])
+        self.embedding_init = self.d_embeddings.assign(self.embedding_placeholder)
+ 
+        # Optimization parameter
+        self.grad_clip = 5.0
+        self.learning_rate = tf.Variable(float(learning_rate), trainable=False)
+       
+        # Data
+        self.b_mask = tf.placeholder(tf.float32, shape=[self.batch_size],
+                                     name="b_mask") # 
+        self.b_truth = tf.placeholder(tf.float32, shape=[self.batch_size],
+                                     name="b_truth") # ground truth baseline
+        self.enc_inp = tf.placeholder(tf.int32, shape=[self.batch_size, self.max_seq_length],
+                                      name="encoderInputs") # input history
+        self.input_lengths = tf.reduce_sum(
+                tf.to_int32(tf.not_equal(self.enc_inp, self.end_token)), 
+                1) # Length of the dialogue without eos
+        self.prev_mem = tf.zeros((self.batch_size, self.hidden_dim)) # hidden state
+        
+        # Embed history
+        with tf.device("/cpu:0"):
+            processed_x = tf.nn.embedding_lookup(self.d_embeddings, self.enc_inp)
 
-        sequence_input = Input(shape=(self.max_seq_length,), dtype='int32')
-        embedded_sequences = self.embedding_layer(sequence_input)
-        l_lstm = Bidirectional(LSTM(100, recurrent_dropout=0.3))(embedded_sequences)
-        preds = Dense(1)(l_lstm)
+        # Model
+        with tf.variable_scope("baseline", reuse=None) as scope:
+            self.enc_cell = tf.contrib.rnn.GRUCell(self.hidden_dim)
+            # encoder_outputs [batch_size, max_seq_length, cell.output_size]
+            # encoder_state [batch_size, cell.state_size] i.e. last
+            # hidden state
+            self.encoder_outputs, self.encoder_state = tf.nn.dynamic_rnn(
+                    self.enc_cell, processed_x, self.input_lengths, self.prev_mem)
+            out = tf.layers.dense(self.encoder_state,100,activation=tf.nn.relu)
+            logits = tf.layers.dense(out, 1) # reward
+        
+        # Loss definition 
+        self.b = tf.nn.sigmoid(logits)
+        self.b_loss = tf.nn.l2_loss((self.b - self.b_truth)*self.b_mask)  
+        
+        # Set saver
+        self.params = tf.trainable_variables()
+        self.saver = tf.train.Saver(var_list=self.params)
+        
+        # Optimization definition
+        self.optimizer = tf.train.AdamOptimizer(self.learning_rate)
+        self.gradients = tf.gradients(self.b_loss, self.params)
+        self.clipped_gradients, _ = tf.clip_by_global_norm(self.gradients, self.grad_clip)
+        self.update = self.optimizer.apply_gradients(
+            zip(self.clipped_gradients, self.params))
 
-        self.model = Model(sequence_input, preds)
-        self.model.compile(loss='mean_squared_error',
-                           optimizer='rmsprop')
 
-        print("model fitting - Bidirectional LSTM regressor")
-        self.model.summary()
 
-    def pretrain(self, x_train, x_val, y_train, y_val):
+    #def get_rewards(self,sess, x):
+    #    rewards = sess.run(self.pred_train_output,
+    #                       feed_dict={self.enc_inp: x})
+    #    #print('get rewards')
+    #    return rewards
+    #
+    #def get_loss(self,sess, x,y):
+    #    loss,acc = sess.run([self.loss],
+    #                       feed_dict={self.enc_inp: x, self.labels: y})
+    #    #print('get rewards')
+    #    return loss,acc
+    
+
+    def restore_model(self,sess,savepath):
+        """
+        Save pre trained model
+        Args:
+            sess: tf session
+            savepath: file path of the model
+        """
+        self.saver.restore(sess, tf.train.latest_checkpoint(savepath))
+    
+    def save_model(self,sess,savepath):
+        """
+        Save pre trained model
+        Args:
+            sess: tf session
+            savepath: file path of the model
+        """
+        self.saver.save(sess, savepath + 'my-model-sentence-sen-1024')
+
+    def assign_emb(self, sess, x):
         """
         Args:
-            embedding_matrix:
-            x_train: Complete train sentences
-            x_val: Complete eval sentences
-            y_train: Label of train sentences
-            y_val: Label of val sentences
-            word_index:
+            sess: tf session
+            x: 
         """
-
-        y_train = to_categorical(np.asarray(y_train))
-        y_val = to_categorical(np.asarray(y_val))
-
-        print('Traing and validation set number of positive and negative reviews')
-        print(y_train.sum(axis=0))
-        print(y_val.sum(axis=0))
-
-        print('preds', self.model.preds.get_shape())
-        exit(1)
-        self.model.fit(x_train, y_train, validation_data=(x_val, y_val),
-                       epochs=10, batch_size=50)
-
-    def train(self, history, sentence,rewards,word_index):
+        sess.run(self.embedding_init, feed_dict={self.embedding_placeholder: x})
+    
+    def get_baseline(self, sess, X, sentence, word_index):
         """
-        Train step
-        Args:
-            x_batch: sentence output by G
-            y_batch: expected reward (compute with MC rollout)
-            batch_size: batch size
+        Compute baseline
         """
-        for t in range(1, self.rep_seq_length+1):
-            history_update = np.copy(history)
-
-            # Matrix [batch_size, rep_seq_length]
-            # Line l: the first t elements are sentence[l,0:t]
-            gen_input_t = np.zeros([self.batch_size, self.rep_seq_length])
-
-            # DEBUG
-            # print("t: ", t)
-            # print("sentence.shape: ", sentence.shape)
-            # print("gen_input_t.shape: ", gen_input_t.shape)
-            # print("gen_input_t[:,0:t].shape: ", gen_input_t[:,0:t].shape)
-            # print("sentence[:,0:t].shape: ", sentence[:,0:t].shape)
-
-            gen_input_t[:, 0:t-1] = sentence[:, 0:t-1]
-
-            # print("word_index['eoh']: ", word_index['eoh'])
-            # print("word_index['eos']: ", word_index['eos'])
-            # print("self.hist_end_token: ", self.hist_end_token)
-            # print("history: ", history)
-            # print("start_insert: ", start_insert)
-            # print("start_insert.shape: ", start_insert.shape)
-            # print("history.shape: ", history.shape)
-            # print("history_update.shape: ", history_update.shape)
-            # print("complete_sentence.shape: ", complete_sentence.shape)
-
-            # train step
-            history_update = self.concat_hist_reply(history_update, gen_input_t, word_index)
-            output = self.model.train_on_batch(history_update, rewards[:, t-1])
-            output = self.model.train_on_batch(history_update, rewards[:, t - 1])
-            # output = self.model.train_on_batch(history_update, rewards[:,t-1])
-
-        self.trained = True
-
-        print('train')
-        return output
-
-    def concat_hist_reply(self,histories, replies, word_index):
-
-        disc_inp = np.full((self.batch_size, self.max_seq_length ), word_index['eos'])
-        counter = 0
-        for h, r in zip(histories, replies):
-
-            i = 0
-            while h[i] != word_index['eoh']:
-                disc_inp[counter, i] = h[i]
-                i = i + 1
-
-            disc_inp[counter, i] = word_index['eoh']
-
-            disc_inp[counter, i + 1:i + 21] = r
-            counter = counter + 1
-
-        return disc_inp
-    def get_baseline(self, history, sentence, word_index):
-        """
-        Prediction step
-        Ags:
-            x_batch:
-            y_batch: MC rewards
-            batch_size:
-        """
-
         baseline = np.zeros([self.batch_size, self.rep_seq_length])
-
-        for t in range(1, self.rep_seq_length+1):
-            history_update = np.copy(history)
-
-            # Matrix [batch_size, rep_seq_length]
-            # Line l: the first t elements are sentence[l,0:t]
-            gen_input_t = np.zeros([self.batch_size, self.rep_seq_length])
-
-            # DEBUG
-            # print("t: ", t)
-            # print("sentence.shape: ", sentence.shape)
-            # print("gen_input_t.shape: ", gen_input_t.shape)
-            # print("gen_input_t[:,0:t].shape: ", gen_input_t[:,0:t].shape)
-            # print("sentence[:,0:t].shape: ", sentence[:,0:t].shape)
-
-            gen_input_t[:, 0:t-1] = sentence[:, 0:t-1]
-
-            # print("word_index['eoh']: ", word_index['eoh'])
-            # print("word_index['eos']: ", word_index['eos'])
-            # print("self.hist_end_token: ", self.hist_end_token)
-            # print("history: ", history)
-            # print("start_insert: ", start_insert)
-            # print("start_insert.shape: ", start_insert.shape)
-            # print("history.shape: ", history.shape)
-            # print("history_update.shape: ", history_update.shape)
-            # print("complete_sentence.shape: ", complete_sentence.shape)
-
-            # Get baseline of these sentences
-            history_update = self.concat_hist_reply(history_update, gen_input_t, word_index)
-            baseline_val= self.model.predict_on_batch(history_update)
-            # baseline[:,t-1] = np.squeeze(baseline_val)
-
-            baseline[:, t - 1] = np.squeeze(baseline_val) #* (sentence[:, (t - 1)] != word_index['eos'])
+        for t in range(1, sentence.shape[1]):
+            history_update = np.copy(X)
+            gen_input_t = np.zeros([headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH])
+            gen_input_t[:,0:t-1] = sentence[:,0:t-1]
+            history_update = toolsSeq2Seq.concat_hist_reply(history_update,
+                    gen_input_t, word_index)
+            b_mask = (sentence[:,(t-1)] !=
+                    word_index['eos']).astype(np.float32)
+            # test mask
+            print("b_mask.shape: ", b_mask.shape)
+            print("b_mask[0,:]: ", b_mask)
+            print("sentence tokens: \n", sentence[:,(t-1)])
+            toolsSeq2Seq.convert_id_to_text(np.array(sentence)[0:3], word_index)
+            
+            b_tmp = sess.run([self.b],
+                           feed_dict={self.enc_inp: X})
+            baseline[:, t - 1] = np.squeeze(b_tmp)
 
         return baseline
-        # TODO the input is not ok
-        if self.trained == False:
-            baseline = np.zeros(x_batch.shape)
-        else:
-            print('get baseline')
+
+
+
+    def train_step(self, sess, x, y, b_mask):
+        """ 
+        Training step on one batch
+        Args:
+            sess: tf session
+            x: 
+            y:
+            b_mask
+        """
+        _, loss= sess.run([self.update, self.b_loss],
+                           feed_dict={self.enc_inp: x, self.b_truth: y,
+                               self.b_mask: b_mask})
+        return loss
+    
+    def train(self, sess, X, sentence, word_index, rewards):
+        """ 
+        Train on rep_seq_length batch
+        """
+        loss = 0
+        # train
+        for t in range(1, sentence.shape[1]):
+            history_update = np.copy(X)
+            gen_input_t = np.zeros([headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH])
+            gen_input_t[:,0:t-1] = sentence[:,0:t-1]
+            history_update = toolsSeq2Seq.concat_hist_reply(history_update,
+                    gen_input_t, word_index)
+            b_mask = (sentence[:,(t-1)] !=
+                    word_index['eos']).astype(np.float32)
+            # test mask
+            print("b_mask.shape: ", b_mask.shape)
+            print("b_mask[0,:]: ", b_mask)
+            print("sentence tokens: \n", sentence[:,(t-1)])
+            toolsSeq2Seq.convert_id_to_text(np.array(sentence)[0:3], word_index)
+
+            loss  += self.train_step(sess, history_update, rewards[:,t-1], b_mask)
+
+        return loss
+
+
+
 
 
 def main():
-    print('TODO')
     # Test pre train
+    (embedding_matrix,
+            hist_train,
+            hist_test,
+            reply_train,
+            reply_test,
+            x_train,
+            x_test,
+            y_train,
+            y_test,
+            word_index) = readFBTask1Seq2Seq.create_con(False,headerSeq2Seq.MAX_SEQ_LENGTH)
 
-    # Test train
+    EMB_DIM = len(word_index) + 1 # embedding dimension
+    END_TOKEN = word_index.get("eos")
+    HIST_END_TOKEN = word_index.get("eoh")
+    headerSeq2Seq.PRE_EPOCH_NUM = 120 # supervise (maximum likelihood estimation) epochs
 
-    # Test get rewards
+    generator = Generator(
+            headerSeq2Seq.BATCH_SIZE, 
+            EMB_DIM, 
+            headerSeq2Seq.HIDDEN_DIM,
+            headerSeq2Seq.MAX_SEQ_LENGTH,
+            headerSeq2Seq.REP_SEQ_LENGTH,
+            headerSeq2Seq.START_TOKEN,
+            END_TOKEN,
+            HIST_END_TOKEN)
+    discriminator = DiscSentence(
+            headerSeq2Seq.BATCH_SIZE,  
+            headerSeq2Seq.HIDDEN_DIM,
+            headerSeq2Seq.MAX_SEQ_LENGTH, 
+            word_index, 
+            END_TOKEN)
+    baseline = Baseline(
+            headerSeq2Seq.BATCH_SIZE, 
+            headerSeq2Seq.HIDDEN_DIM, 
+            headerSeq2Seq.MAX_SEQ_LENGTH, 
+            word_index, 
+            END_TOKEN,
+            learning_rate=0.0004)
+ 
+    # Tf session
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    sess = tf.Session(config=config)
+    sess.run(tf.global_variables_initializer())
+    generator.assign_emb(sess,embedding_matrix)
+    discriminator.assign_emb(sess,embedding_matrix)
+    savepathG = 'GeneratorModel/'  # best is saved here
+    savepathD = 'DiscModel/'
+    try:
+        generator.restore_model(sess, savepathG)
+        discriminator.restore_model(sess,savepathD)
+    except:
+        print("Disc and Gen could not be restored")
+        exit(1)
+    pass
 
+    idxTrain = np.arange(len(hist_train))
+    idxTest = np.arange(len(hist_test))
+    for ep in range(10):
+        np.random.shuffle(idxTrain)
+
+        for j in range(0, hist_train.shape[0] // headerSeq2Seq.BATCH_SIZE):
+
+            X = hist_train[idxTrain[j*headerSeq2Seq.BATCH_SIZE:(j+1)*headerSeq2Seq.BATCH_SIZE],:]
+            Y_train = reply_train[idxTrain[j*headerSeq2Seq.BATCH_SIZE:(j+1)*headerSeq2Seq.BATCH_SIZE],:]
+            Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.MAX_SEQ_LENGTH)) * word_index['eos']
+            gen_proba,sentence, sentence_proba = generator.generate(sess, X, Y)
+            rewards = generator.MC_reward(sess, X, sentence, headerSeq2Seq.MC_NUM,
+                    discriminator,word_index)
+
+            # train
+            for t in range(1, sentence.shape[1]):
+                history_update = np.copy(X)
+                gen_input_t = np.zeros([headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.MAX_SEQ_LENGTH])
+                gen_input_t[:,0:t-1] = sentence[:,0:t-1]
+                history_update = toolsSeq2Seq.concat_hist_reply(history_update,
+                        gen_input_t, word_index)
+                b_mask = (sentence[:,(t-1)] !=
+                        word_index['eos']).astype(np.float32)
+                # test mask
+                print("b_mask.shape: ", b_mask.shape)
+                print("b_mask[0,:]: ", b_mask)
+                print("sentence tokens: \n", sentence[:,(t-1)])
+                toolsSeq2Seq.convert_id_to_text(np.array(sentence)[0:3], word_index)
+
+                loss = baseline.train(sess, history_update, rewards[:,t-1], b_mask)                
+
+            print("Epoch: %d, loss: %.3f" %(ep, loss))
 
 if __name__ == '__main__':
     main()

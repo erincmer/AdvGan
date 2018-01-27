@@ -55,11 +55,12 @@ discriminator = DiscSentence(EMB_DIM,
                              headerSeq2Seq.MAX_SEQ_LENGTH,
                              word_index,
                              END_TOKEN)
-# baseline = Baseline(headerSeq2Seq.BATCH_SIZE,
-#                     headerSeq2Seq.HIDDEN_DIM,
-#                     headerSeq2Seq.MAX_SEQ_LENGTH,
-#                     word_index,
-#                     learning_rate=0.0004)
+baseline = Baseline(headerSeq2Seq.BATCH_SIZE,
+                    headerSeq2Seq.HIDDEN_DIM,
+                    headerSeq2Seq.REP_SEQ_LENGTH,
+                    headerSeq2Seq.MAX_SEQ_LENGTH,
+                    word_index,
+                    learning_rate=0.0004)
 
 # TF setting
 config = tf.ConfigProto()
@@ -95,10 +96,10 @@ try:
 except:
     print("Gen could not be restored")
     pass
-pretrain.pretrain(sess,discriminator,generator,discEp,genEp,train_Disc,train_Gen,savepathD,savepathG)
+#pretrain.pretrain(sess,discriminator,generator,discEp,genEp,train_Disc,train_Gen,savepathD,savepathG)
 
-d_steps = 1
-g_steps = 100
+d_steps = 0
+g_steps = 1
 idxTrain = np.arange(len(hist_train))
 idxTest = np.arange(len(hist_test))
 # Adversarial steps
@@ -172,7 +173,12 @@ for ep in range(0, 1000000):
         disc_rewards = discriminator.get_rewards(sess, disc_in)
 
         rewards = generator.MC_reward(sess, X_one, sentence, headerSeq2Seq.MC_NUM, discriminator, word_index)
-        b = np.tile(np.mean(np.array(rewards), axis=0), (headerSeq2Seq.BATCH_SIZE, 1))
+
+        b_loss = baseline.train(sess, X_one, sentence, word_index, rewards)
+        b = baseline.get_baseline(sess, X_one, sentence, word_index)
+        print("baseline baby !: ", b)
+        print("baseline loss: ", b_loss)
+        #b = np.tile(np.mean(np.array(rewards), axis=0), (headerSeq2Seq.BATCH_SIZE, 1))
         # toolsSeq2Seq.convert_id_reward_to_text(np.array(sentence)[0:10],disc_rewards[:10,1],rewards[:10],b[:10],word_index)
 
 

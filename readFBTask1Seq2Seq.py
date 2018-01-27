@@ -357,6 +357,11 @@ def create_con( create_data,MAX_SEQUENCE_LENGTH = 200,MAX_REP_SEQUENCE_LENGTH = 
         #        pickle.dump(rep_in_Test, output, protocol=4)
         with open('wi_Task1.pickle', 'wb') as output:
             pickle.dump(word_index, output, protocol=4)
+        with open('label_train_dialogs.pickle', 'wb') as output:
+            pickle.dump(label_train_dialogs, output, protocol=4)
+        with open('label_test_dialogs.pickle', 'wb') as output:
+            pickle.dump(label_test_dialogs, output, protocol=4)
+
         print("saving finished ")
 
     else:
@@ -381,6 +386,10 @@ def create_con( create_data,MAX_SEQUENCE_LENGTH = 200,MAX_REP_SEQUENCE_LENGTH = 
            Test = pickle.load(output)
         with open('wi_Task1.pickle', 'rb') as output:
             word_index = pickle.load(output)
+        with open('label_train_dialogs.pickle', 'rb') as output:
+            label_train_dialogs = pickle.load(output)
+        with open('label_test_dialogs.pickle', 'rb') as output:
+            label_test_dialogs = pickle.load(output)
 
         print("loading finished ")
 
