@@ -343,11 +343,16 @@ def create_con( create_data,MAX_SEQUENCE_LENGTH = 200,MAX_REP_SEQUENCE_LENGTH = 
             pickle.dump(hist_Test, output, protocol=4)
         with open('repTrain_Task1.pickle', 'wb') as output:
             pickle.dump(rep_Train, output, protocol=4)
-        # with open('repInTrain_Task1.pickle', 'wb') as output:
-        #        pickle.dump(rep_in_Train, output, protocol=4)
-
+        with open('Train_Task1.pickle', 'wb') as output:
+                pickle.dump(Train, output, protocol=4)
+        with open('Test_Task1.pickle', 'wb') as output:
+                pickle.dump(Test, output, protocol=4)
         with open('repTest_Task1.pickle', 'wb') as output:
             pickle.dump(rep_Test, output, protocol=4)
+        with open('labTrain_Task1.pickle', 'wb') as output:
+            pickle.dump(label_train_dialogs, output, protocol=4)
+        with open('labTest_Task1.pickle', 'wb') as output:
+            pickle.dump(label_test_dialogs, output, protocol=4)
         # with open('repInTest_Task1.pickle', 'wb') as output:
         #        pickle.dump(rep_in_Test, output, protocol=4)
         with open('wi_Task1.pickle', 'wb') as output:
@@ -364,12 +369,16 @@ def create_con( create_data,MAX_SEQUENCE_LENGTH = 200,MAX_REP_SEQUENCE_LENGTH = 
             hist_Test = pickle.load(output)
         with open('repTrain_Task1.pickle', 'rb') as output:
             rep_Train = pickle.load(output)
-        # with open('repInTrain_Task1.pickle', 'rb') as output:
-        #    rep_in_Train =pickle.load(output)
+        with open('Train_Task1.pickle', 'rb') as output:
+           Train =pickle.load(output)
         with open('repTest_Task1.pickle', 'rb') as output:
             rep_Test = pickle.load(output)
-        # with open('repInTest_Task1.pickle', 'rb') as output:
-        #    rep_in_Test = pickle.load(output)
+        with open('labTrain_Task1.pickle', 'rb') as output:
+            label_train_dialogs = pickle.load(output)
+        with open('labTest_Task1.pickle', 'rb') as output:
+            label_test_dialogs = pickle.load(output)
+        with open('Test_Task1.pickle', 'rb') as output:
+           Test = pickle.load(output)
         with open('wi_Task1.pickle', 'rb') as output:
             word_index = pickle.load(output)
 
