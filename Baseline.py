@@ -120,7 +120,7 @@ class Baseline(object):
         """
         baseline = np.zeros([self.batch_size, self.rep_seq_length])
         print("eos token: ", word_index['eos'])
-        for t in range(1, sentence.shape[1]):
+        for t in range(0, sentence.shape[1]):
             history_update = np.copy(X)
             gen_input_t = np.ones([headerSeq2Seq.BATCH_SIZE, 
                 headerSeq2Seq.REP_SEQ_LENGTH]) * word_index['eos']
@@ -136,7 +136,9 @@ class Baseline(object):
 
             # Compute mask
             # Take into account the first eos but mask all the others
-            if t==1:
+            if t == 0:
+                b_mask = np.ones([self.batch_size]).astype(np.float32)
+            elif t==1:
                 b_mask = (sentence[:,t-1] !=
                     word_index['eos']).astype(np.float32)
             else:
@@ -191,7 +193,7 @@ class Baseline(object):
         loss = 0
         # train
 
-        for t in range(1, sentence.shape[1]):
+        for t in range(0, sentence.shape[1]):
             history_update = np.copy(X)
             gen_input_t = np.ones([headerSeq2Seq.BATCH_SIZE, 
                 headerSeq2Seq.REP_SEQ_LENGTH]) * word_index['eos']
@@ -206,7 +208,9 @@ class Baseline(object):
 
             # Compute mask
             # Take into account the first eos but mask all the others
-            if t==1:
+            if t == 0:
+                b_mask = np.ones([self.batch_size]).astype(np.float32)
+            elif t==1:
                 b_mask = (sentence[:,t-1] !=
                     word_index['eos']).astype(np.float32)
             else:
