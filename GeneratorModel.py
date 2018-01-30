@@ -55,11 +55,22 @@ class Generator(object):
         # word_proba[t] = p(y_t | X, y_{0:t-1}
         self.rewards = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length], name="rewards")
         self.baseline = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length], name="baseline")
-        self.word_probas = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length],
-                                          name="wordprobas")
 
-        self.rewards = tf.placeholder(tf.float32, shape=[self.batch_size,
-                                                         self.rep_sequence_length])  # get from rollout policy and discriminator
+        # Interactive training feed dict
+        self.sentence_proba = tf.placeholder(
+                tf.float32,
+                shape=[64,None],
+                name="sentence_proba")
+        self.sentence_rewards = tf.placeholder(
+                tf.float32,
+                shape=[64,None],
+                name="sentence_rewards")
+        self.sentence_baseline = tf.placeholder(
+                tf.float32,
+                shape=[64,None],
+                name="sentence_baseline")
+
+
         with tf.device("/cpu:0"):
             # processed_x = tf.transpose(tf.nn.embedding_lookup(self.g_embeddings, self.enc_inp), perm=[1, 0, 2])
             # processed_y = tf.transpose(tf.nn.embedding_lookup(self.g_embeddings, self.dec_inp), perm=[1, 0, 2])
@@ -152,6 +163,17 @@ class Generator(object):
         self.test_output_ids = self.test_x[0].sample_id
         self.pred_train_output_ids = self.train_outputs[0].sample_id
 
+        self.gen_sentence_proba = tf.reduce_prod(
+                tf.reduce_sum(
+                    tf.one_hot(
+                        tf.to_int32( self.pred_output_ids),
+                        self.num_emb, 1.0, 0.0) *
+                    tf.clip_by_value( 
+                        tf.nn.softmax(self.gen_x[0].rnn_output),
+                        1e-20, 1.0),
+                    2),
+                1) # proba of the generated sentence
+
         self.params = tf.trainable_variables()
         self.saver = tf.train.Saver(var_list=self.params)
         self.gradients = tf.gradients(self.pretrain_loss, self.params)
@@ -193,6 +215,100 @@ class Generator(object):
         self.g_grad, _ = tf.clip_by_global_norm(tf.gradients(self.g_loss, self.params), self.grad_clip)
         self.g_updates = g_opt.apply_gradients(zip(self.g_grad, self.params))
 
+        # PPO optimization V1 standalone
+        # I use only the proba of the words inside the generated sentence to
+        # compute the ratio. I am not sure if it is the correct way.
+        self.old_distro = tf.placeholder(
+                tf.float32, 
+                shape=[self.batch_size, self.rep_sequence_length, self.emb_dim],
+                name="old_distro")
+        self.clip_param = 0.2
+
+        # Normalize rewards (maybe unnecessary) and flatten it
+        mean = tf.reduce_mean(self.rewards, axis=[1], keep_dims=True)
+        var = tf.reduce_mean(tf.square(self.rewards-mean), axis=[1], keep_dims=False)
+        std = tf.expand_dims(tf.sqrt(var), 1)
+        atarg = tf.reshape((self.rewards - mean)/std, [-1])  # A estimator
+        print("atarg.get_shape(): ", atarg.get_shape())
+
+        # Flatten probas
+        new_proba = tf.reduce_sum( # proba of words in the generated sentence only
+                tf.one_hot(
+                    tf.to_int32(tf.reshape(self.sentence, [-1])),
+                    self.num_emb, 1.0, 0.0) *  tf.clip_by_value(
+                        tf.reshape(tf.nn.softmax(self.gen_x[0].rnn_output), 
+                            [-1, self.num_emb]), 
+                        1e-20, 1.0),1)
+        old_proba = tf.reduce_sum( # old proba of words in the generated sentence only
+                tf.one_hot(
+                    tf.to_int32(tf.reshape(self.sentence, [-1])),
+                    self.num_emb, 1.0, 0.0) *  tf.clip_by_value(
+                        tf.reshape(self.old_distro, 
+                            [-1, self.num_emb]), 
+                        1e-20, 1.0),1)
+
+        ratio = new_proba / old_proba # r
+        print("ratio.get_shape(): ", ratio.get_shape())
+        surr1 = ratio * atarg # r * A
+        # clipped version of r*A
+        surr2 = tf.clip_by_value(ratio, 1.0 - self.clip_param, 1.0 + self.clip_param) * atarg
+        pol_surr = - tf.reduce_mean(tf.minimum(surr1, surr2)) # -L^CLIP
+        
+        # Optimization
+        self.ppo_loss = pol_surr
+        ppo_opt = tf.train.AdamOptimizer(self.learning_rate)
+        self.ppo_grad, _ = tf.clip_by_global_norm(tf.gradients(self.ppo_loss, self.params), self.grad_clip)
+        self.ppo_updates = ppo_opt.apply_gradients(zip(self.ppo_grad, self.params))
+
+        # End of PPO V1 standalone
+
+        # Reinforce optimization interact V1 
+        # Use other agent reward as baseline
+        self.last_sentence_proba = tf.reduce_prod(
+                tf.reduce_sum(
+                    tf.one_hot(
+                        tf.to_int32(
+                            self.sentence), 
+                        self.num_emb, 1.0, 0.0) * tf.clip_by_value(
+                            tf.nn.softmax(self.gen_x[0].rnn_output), 
+                            1e-20, 1.0),
+                        2),
+                1)
+
+        self.inter_loss = -tf.reduce_sum(
+                tf.reduce_sum( 
+                    self.sentence_proba[:,:-1] * (
+                        self.sentence_rewards[:,:-1] 
+                        - self.sentence_baseline[:,:-1])
+                    , 1) - self.last_sentence_proba *(
+                        self.sentence_rewards[:,-1] 
+                        - self.sentence_baseline[:,-1]) )
+
+        inter_opt = tf.train.AdamOptimizer(self.learning_rate)
+        self.inter_grad, _ = tf.clip_by_global_norm(tf.gradients(self.inter_loss, self.params), self.grad_clip)
+        self.inter_updates = inter_opt.apply_gradients(zip(self.inter_grad, self.params))
+        # End of Reinforce optimization standalone
+
+
+    def ppo_step(self, sess, history, labels, sentence, rewards, old_distro):
+        """
+        Computes sentence from given history and compute loss given reward and
+        baseline
+        Args:
+            sess: tf session
+            sentence: sentence output by generator
+            history: Dialogue history used to generate sentence
+            labels: Expected reply following history
+            setence: Reply generated by the generator following history
+            rewards: MC-Discriminator rewards for the generated sentence
+            old_distro: Distributions over actions at the previous step 
+        """
+        feed_dict = {self.enc_inp: history, self.labels: labels, self.sentence: sentence, self.rewards: rewards,
+                     self.old_distro: old_distro}
+        outputs = sess.run([self.ppo_updates, self.ppo_loss], feed_dict)
+        return outputs
+ 
+
     def pad_dim(self,input_tensor):
         padding = tf.tile([[0]], tf.stack( [self.batch_size, self.rep_sequence_length - self.output_lengths], 0))
            # [tf.shape(input_tensor)[0], self.rep_sequence_length - tf.shape(input_tensor)[1]], 0))
@@ -202,9 +318,21 @@ class Generator(object):
 
     def generate(self, sess, x, y):
         outputs, ids = sess.run([self.pred_output, self.pred_output_ids], feed_dict={self.enc_inp: x, self.labels: y})
-
-
         return outputs, ids
+
+
+    def gen_proba_sentence(self, sess, x, y):
+        """
+        Generates sentence and returns the proba of the word in the sentence
+        Args:
+            sess: tf session
+            x: history
+            y: ground truth sentence
+        """
+        proba, ids = sess.run([self.gen_sentence_proba, self.pred_output_ids], feed_dict={self.enc_inp: x, self.labels: y})
+        return proba, ids
+
+    
     def test_generate(self, sess, x, y):
         outputs, ids = sess.run([self.test_output, self.test_output_ids], feed_dict={self.enc_inp: x, self.labels: y})
 
@@ -263,6 +391,25 @@ class Generator(object):
         feed_dict = {self.enc_inp: history, self.labels: labels, self.sentence: sentence, self.rewards: rewards,
                      self.baseline: baseline}
         outputs = sess.run([self.g_updates, self.g_loss], feed_dict)
+        return outputs
+
+    def inter_train_step(self, sess, history, labels, sentence, proba, rewards, baseline):
+        """
+        Computes sentence from given history and compute loss given reward and
+        baseline
+        Args:
+            sess: tf session
+            sentence: sentence output by generator
+            rewards: reward for each sentence in history
+            baseline: baseline for each sentence in history
+        """
+        feed_dict = {self.enc_inp: history, 
+                self.labels: labels, 
+                self.sentence: sentence,
+                self.sentence_proba: proba,
+                self.sentence_rewards: rewards,
+                self.sentence_baseline: baseline}
+        outputs = sess.run([self.inter_updates, self.inter_loss], feed_dict)
         return outputs
 
     def init_matrix(self, shape):
