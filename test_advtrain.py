@@ -79,18 +79,19 @@ def create_networks(EMB_DIM,END_TOKEN,word_index):
                              headerSeq2Seq.MAX_SEQ_LENGTH,
                              headerSeq2Seq.REP_SEQ_LENGTH,
                              headerSeq2Seq.START_TOKEN,
-                             END_TOKEN)
+                             END_TOKEN,"gen1")
     discriminator_s1 = DiscSentence(EMB_DIM,
                                     headerSeq2Seq.BATCH_SIZE,
                                     EMB_DIM, headerSeq2Seq.HIDDEN_DIM,
                                     headerSeq2Seq.MAX_SEQ_LENGTH,
                                     word_index,
-                                    END_TOKEN)
+                                    END_TOKEN,"disc1")
     baseline_s1 = Baseline(headerSeq2Seq.BATCH_SIZE,
                            headerSeq2Seq.HIDDEN_DIM,
                            headerSeq2Seq.REP_SEQ_LENGTH,
                            headerSeq2Seq.MAX_SEQ_LENGTH,
                            word_index,
+                           "base1",
                            learning_rate=0.0004)
 
     generator_s2 = Generator(EMB_DIM,
@@ -100,30 +101,30 @@ def create_networks(EMB_DIM,END_TOKEN,word_index):
                              headerSeq2Seq.MAX_SEQ_LENGTH,
                              headerSeq2Seq.REP_SEQ_LENGTH,
                              headerSeq2Seq.START_TOKEN,
-                             END_TOKEN)
+                             END_TOKEN,"gen2")
     discriminator_s2 = DiscSentence(EMB_DIM,
                                     headerSeq2Seq.BATCH_SIZE,
                                     EMB_DIM, headerSeq2Seq.HIDDEN_DIM,
                                     headerSeq2Seq.MAX_SEQ_LENGTH,
                                     word_index,
-                                    END_TOKEN)
+                                    END_TOKEN,"disc2")
     baseline_s2 = Baseline(headerSeq2Seq.BATCH_SIZE,
                            headerSeq2Seq.HIDDEN_DIM,
                            headerSeq2Seq.REP_SEQ_LENGTH,
                            headerSeq2Seq.MAX_SEQ_LENGTH,
-                           word_index,
+                           word_index,"base2",
                            learning_rate=0.0004)
     discriminator_s3 = DiscSentence(EMB_DIM,
                                     headerSeq2Seq.BATCH_SIZE,
                                     EMB_DIM, headerSeq2Seq.HIDDEN_DIM,
                                     headerSeq2Seq.MAX_SEQ_LENGTH,
                                     word_index,
-                                    END_TOKEN)
+                                    END_TOKEN,"disc3")
     baseline_s3 = Baseline(headerSeq2Seq.BATCH_SIZE,
                            headerSeq2Seq.HIDDEN_DIM,
                            headerSeq2Seq.REP_SEQ_LENGTH,
                            headerSeq2Seq.MAX_SEQ_LENGTH,
-                           word_index,
+                           word_index,"base3",
                            learning_rate=0.0004)
 
     return generator_s1,discriminator_s1,baseline_s1,\
@@ -135,7 +136,7 @@ def trainS1(gen1,disc1,base1,hist_s1,reply_s1,d_steps = 2,g_steps = 1,lr=0.00000
 
     idxTrain = np.arange(len(hist_s1))
 
-    for ep in range(epochs):
+    for ep in range(1):
         # Train discriminator
 
         for d in range(d_steps):
@@ -197,7 +198,7 @@ def trainS1(gen1,disc1,base1,hist_s1,reply_s1,d_steps = 2,g_steps = 1,lr=0.00000
 
                 X = hist_s1[idxTrain[j * headerSeq2Seq.BATCH_SIZE:(j + 1) * headerSeq2Seq.BATCH_SIZE], :]
 
-                Y_train = reply_s1[idxTrain[j * headerSeq2Seq.BATCH_SIZE:(j + 1) * headerSeq2Seq.BATCH_SIZE], :]
+                # Y_train = reply_s1[idxTrain[j * headerSeq2Seq.BATCH_SIZE:(j + 1) * headerSeq2Seq.BATCH_SIZE], :]
 
 
                 Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH)) * word_index['eos']
@@ -206,8 +207,8 @@ def trainS1(gen1,disc1,base1,hist_s1,reply_s1,d_steps = 2,g_steps = 1,lr=0.00000
                 gen_proba, sentence = gen1.generate(sess, X, Y)
 
 
-                disc_in = toolsSeq2Seq.concat_hist_reply(X, sentence, word_index)
-                disc_rewards = disc1.get_rewards(sess, disc_in)
+                # disc_in = toolsSeq2Seq.concat_hist_reply(X, sentence, word_index)
+                # disc_rewards = disc1.get_rewards(sess, disc_in)
 
                 rewards = gen1.MC_reward(sess, X, sentence, headerSeq2Seq.MC_NUM, disc1, word_index)
                 # b = np.tile(np.mean(np.array(rewards), axis=0), (headerSeq2Seq.BATCH_SIZE, 1))
@@ -220,6 +221,7 @@ def trainS1(gen1,disc1,base1,hist_s1,reply_s1,d_steps = 2,g_steps = 1,lr=0.00000
 
                 _, adv_loss = gen1.advtrain_step(sess, X, sentence, sentence, rewards, b)
                 base1.save_model(sess,'BaselineModel/S1/')
+                gen1.save_model(sess,'GeneratorModel/S1/Reinforce/')
 
 
     return
@@ -228,7 +230,7 @@ def trainS1(gen1,disc1,base1,hist_s1,reply_s1,d_steps = 2,g_steps = 1,lr=0.00000
 def trainS2(gen2,disc2,base2,hist_s2,reply_s2,d_steps = 2,g_steps = 1,lr =0.000001):
     idxTrain = np.arange(len(hist_s2))
 
-    for ep in range(epochs):
+    for ep in range(1):
         # Train discriminator
 
         for d in range(d_steps):
@@ -279,7 +281,7 @@ def trainS2(gen2,disc2,base2,hist_s2,reply_s2,d_steps = 2,g_steps = 1,lr =0.0000
                 _, d_loss, d_acc, _ = disc2.train_step(sess, X_d, label_d)
                 if j % 50 == 0:
                     print("Discriminator loss = ", d_loss,"Discriminator accuracy = ",d_acc)
-                    disc2.save_model(sess, savepathD_S1)
+                    disc2.save_model(sess, savepathD_S2)
         gen2.assign_lr(sess, lr)
         for g in range(g_steps):
             print("G step for S1 ==== ", g)
@@ -290,7 +292,7 @@ def trainS2(gen2,disc2,base2,hist_s2,reply_s2,d_steps = 2,g_steps = 1,lr =0.0000
 
                 X = hist_s2[idxTrain[j * headerSeq2Seq.BATCH_SIZE:(j + 1) * headerSeq2Seq.BATCH_SIZE], :]
 
-                Y_train = reply_s2[idxTrain[j * headerSeq2Seq.BATCH_SIZE:(j + 1) * headerSeq2Seq.BATCH_SIZE], :]
+                # Y_train = reply_s2[idxTrain[j * headerSeq2Seq.BATCH_SIZE:(j + 1) * headerSeq2Seq.BATCH_SIZE], :]
 
 
                 Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH)) * word_index['eos']
@@ -299,8 +301,8 @@ def trainS2(gen2,disc2,base2,hist_s2,reply_s2,d_steps = 2,g_steps = 1,lr =0.0000
                 gen_proba, sentence = gen2.generate(sess, X, Y)
 
 
-                disc_in = toolsSeq2Seq.concat_hist_reply(X, sentence, word_index)
-                disc_rewards = disc2.get_rewards(sess, disc_in)
+                # disc_in = toolsSeq2Seq.concat_hist_reply(X, sentence, word_index)
+                # disc_rewards = disc2.get_rewards(sess, disc_in)
 
                 rewards = gen2.MC_reward(sess, X, sentence, headerSeq2Seq.MC_NUM, disc1, word_index)
                 # b = np.tile(np.mean(np.array(rewards), axis=0), (headerSeq2Seq.BATCH_SIZE, 1))
@@ -313,6 +315,7 @@ def trainS2(gen2,disc2,base2,hist_s2,reply_s2,d_steps = 2,g_steps = 1,lr =0.0000
 
                 _, adv_loss = gen2.advtrain_step(sess, X, sentence, sentence, rewards, b)
                 base2.save_model(sess,'BaselineModel/S2/')
+                gen2.save_model(sess,'GeneratorModel/S2/Reinforce/')
     return
 
 def trainS3():
@@ -485,7 +488,7 @@ train_data,test_data,
  word_index) = readFBTask1Seq2Seq.create_con(True, headerSeq2Seq.MAX_SEQ_LENGTH,headerSeq2Seq.REP_SEQ_LENGTH)
 
 
-input("wait")
+
 
 EMB_DIM = len(word_index) + 1  # embedding dimension
 END_TOKEN = word_index.get("eos")
@@ -546,7 +549,7 @@ except:
     pass
 
 
-pretrain.pretrain(sess,disc1,gen1,discEp,genEp,train_Disc,train_Gen,savepathD_S1,savepathG_S1_Seq2Seq)
+# pretrain.pretrain(sess,disc1,gen1,discEp,genEp,train_Disc,train_Gen,savepathD_S1,savepathG_S1_Seq2Seq)
 pretrain.pretrain(sess,disc2,gen2,discEp,genEp,train_Disc,train_Gen,savepathD_S2,savepathG_S2_Seq2Seq)
 
 
@@ -573,6 +576,14 @@ test_reply_s2 = test_data["reply_s2"]
 test_reply_s2_OOV = test_data["reply_s2_OOV"]
 
 
+for e in range(100):
+
+    testS2_onTest(gen2, hist_s2, reply_s2, test_hist_s2, test_reply_s2, test_hist_s2_OOV, test_reply_s2_OOV)
+
+
+    trainS2(gen2,disc2,base2,hist_s2,reply_s2,2,1,0.000001)
+    testS2_onTest(gen2,hist_s2,reply_s2,test_hist_s2,test_reply_s2,test_hist_s2_OOV,test_reply_s2_OOV)
+    testS2(gen2,disc2,hist_s2)
 
 
 
@@ -582,12 +593,7 @@ for e in range(100):
     testS1(gen1,disc1,hist_s1)
 
 
-for e in range(100):
 
-
-    trainS2(gen2,disc2,base2,hist_s2,reply_s2,2,1,0.000001)
-    testS2(gen2,disc2,hist_s2)
-    testS2_onTest(gen2,hist_s2,reply_s2,test_hist_s2,test_reply_s2,test_hist_s2_OOV,test_reply_s2_OOV)
 
 
 #trainS3()

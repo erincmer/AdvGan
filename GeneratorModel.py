@@ -8,7 +8,7 @@ from tensorflow.contrib.seq2seq.python.ops.helper import MonteCarloEmbeddingHelp
 
 class Generator(object):
     def __init__(self, num_emb, batch_size, emb_dim, hidden_dim,
-                 sequence_length, rep_sequence_length, start_token, end_token, hist_end_token,
+                 sequence_length, rep_sequence_length, start_token, end_token,gen_name,
                  learning_rate=0.00001, reward_gamma=1.00):
 
         self.num_emb = num_emb  # vocab size
@@ -18,7 +18,7 @@ class Generator(object):
         self.sequence_length = sequence_length
         self.rep_sequence_length = rep_sequence_length
         self.end_token = end_token
-        self.hist_end_token = end_token
+
         self.start_tokens = tf.constant([start_token] * self.batch_size, dtype=tf.int32)
         self.end_tokens = tf.constant([end_token] * self.batch_size, dtype=tf.int32)
         self.start_tokens_check = tf.constant([start_token + 5] * self.batch_size, dtype=tf.int32)
@@ -42,7 +42,7 @@ class Generator(object):
         # self.start_tokens = tf.zeros([batch_size],tf.int32)
         self.dec_inp = tf.concat([tf.expand_dims(self.start_tokens, 1), self.labels], 1)
 
-        self.input_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.enc_inp, self.hist_end_token)), 1)
+        self.input_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.enc_inp, self.end_token)), 1)
         self.output_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.dec_inp, self.end_token)), 1)
         self.output_lengths_full = tf.constant([self.rep_sequence_length] * self.batch_size, dtype=tf.int32)
         self.g_embeddings = tf.Variable(tf.constant(0.0, shape=[self.num_emb, self.emb_dim]),
@@ -66,20 +66,25 @@ class Generator(object):
             processed_x = tf.transpose(tf.nn.embedding_lookup(self.g_embeddings, self.enc_inp), perm=[0, 1, 2])
             processed_y = tf.transpose(tf.nn.embedding_lookup(self.g_embeddings, self.dec_inp), perm=[0, 1, 2])
 
-        # Encoder definition
-        self.enc_cell = tf.contrib.rnn.GRUCell(self.hidden_dim)
-        self.encoder_outputs, self.encoder_state = tf.nn.dynamic_rnn(self.enc_cell, processed_x, self.input_lengths ,self.prev_mem)
+        with tf.variable_scope(gen_name) as scope:
 
-        # Decoder definition
-        train_helper = tf.contrib.seq2seq.TrainingHelper(processed_y, self.output_lengths_full)
-        sampling_prob = tf.Variable(0.0, dtype=tf.float32)
-        # pred_helper = tf.contrib.seq2seq.SampleEmbeddingHelper(sample,numpy.full((self.batch_size),self.rep_sequence_length),tf.int32, processed_y,end_fn,next_inputs)
-        #
-        test_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
-            self.g_embeddings, start_tokens=tf.to_int32(self.start_tokens), end_token=200)
-        pred_helper = MonteCarloHelper(processed_y, self.output_lengths,self.output_lengths_full, self.g_embeddings,
-                                       start_tokens=tf.to_int32(self.start_tokens),end_token =self.end_token,  end_tokens=tf.to_int32(self.end_tokens),
-                                       softmax_temperature=self.temperature, seed=1881)
+            # Encoder definition
+            self.enc_cell = tf.contrib.rnn.GRUCell(self.hidden_dim)
+            self.encoder_outputs, self.encoder_state = tf.nn.dynamic_rnn(self.enc_cell, processed_x, self.input_lengths ,self.prev_mem)
+
+            # Decoder definition
+            train_helper = tf.contrib.seq2seq.TrainingHelper(processed_y, self.output_lengths_full)
+            sampling_prob = tf.Variable(0.0, dtype=tf.float32)
+            # pred_helper = tf.contrib.seq2seq.SampleEmbeddingHelper(sample,numpy.full((self.batch_size),self.rep_sequence_length),tf.int32, processed_y,end_fn,next_inputs)
+            #
+            test_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
+                self.g_embeddings, start_tokens=tf.to_int32(self.start_tokens), end_token=200000)
+            pred_helper = MonteCarloHelper(processed_y, self.output_lengths,self.output_lengths_full, self.g_embeddings,
+                                           start_tokens=tf.to_int32(self.start_tokens),end_token =self.end_token,  end_tokens=tf.to_int32(self.end_tokens),
+                                           softmax_temperature=self.temperature, seed=1881)
+
+
+
 
         # # pred_helper = tf.contrib.seq2seq.TrainingHelper(processed_y, self.output_lengths_full)
         # train_helper = tf.contrib.seq2seq.ScheduledEmbeddingTrainingHelper(
@@ -117,9 +122,9 @@ class Generator(object):
                 )
                 return outputs
 
-        self.train_outputs = decode(train_helper, 'decode')
-        self.gen_x = decode(pred_helper, 'decode', reuse=True)
-        self.test_x = decode(test_helper, 'decode', reuse=True)
+        self.train_outputs = decode(train_helper, 'decode'+gen_name)
+        self.gen_x = decode(pred_helper, 'decode'+gen_name, reuse=True)
+        self.test_x = decode(test_helper, 'decode'+gen_name, reuse=True)
         # tf.identity(self.train_outputs.sample_id[0], name='train_pred')
         # tf.identity(self.train_outputs.rnn_output[0], name='train_pred')
 
@@ -163,19 +168,19 @@ class Generator(object):
         # print("self.rewards.get_shape()): ", self.rewards.get_shape())
         # print("self.baseline.get_shape()): ", self.baseline.get_shape())
 
-        self.g_loss = -tf.reduce_sum(tf.reduce_sum(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0) *
+        self.g_loss = -tf.reduce_mean(tf.reduce_sum(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0) *
                                     tf.log(
                               tf.clip_by_value(tf.reshape(tf.nn.softmax(self.gen_x[0].rnn_output), [-1, self.num_emb]), 1e-20,
                                                1.0)),1)* (tf.reshape(self.rewards, [-1]) - tf.reshape(self.baseline, [-1])))
 
         self.g_part0 =  tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0)
 
-        self.g_part1 =  tf.clip_by_value(tf.nn.softmax(tf.reshape(self.gen_x[0].rnn_output, [-1, self.num_emb])), 1e-20,1.0)
+        self.g_part1 =  tf.log(tf.clip_by_value(tf.nn.softmax(tf.reshape(self.gen_x[0].rnn_output, [-1, self.num_emb])), 1e-20,1.0))
 
         self.g_part2 = tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0) * tf.log(
                               tf.clip_by_value(tf.reshape(tf.nn.softmax(self.gen_x[0].rnn_output), [-1, self.num_emb]), 1e-20,
                                                1.0))
-        self.g_part3 = tf.reduce_sum(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0) *tf.log(
+        self.g_part3 = -tf.reduce_sum(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0) *tf.log(
                               tf.clip_by_value(tf.reshape(tf.nn.softmax(self.gen_x[0].rnn_output), [-1, self.num_emb]), 1e-20,
                                                1.0)),1)
         self.g_part4 = (tf.reshape(self.rewards, [-1]) - tf.reshape(self.baseline, [-1]))
@@ -281,7 +286,7 @@ class Generator(object):
 
             disc_inp[counter, i] = word_index['eoh']
 
-            disc_inp[counter, i + 1:i + 21] = r
+            disc_inp[counter, i + 1:i + self.rep_sequence_length + 1] = r
             counter = counter + 1
 
         return disc_inp
@@ -319,7 +324,7 @@ class Generator(object):
 
                     # Matrix [batch_size, rep_seq_length]
                     # Line l: the first t elements are sentence[l,0:t]
-                    gen_input_t = np.zeros([self.batch_size, self.rep_sequence_length])
+                    gen_input_t = np.ones(([self.batch_size, self.rep_sequence_length])) * word_index['eos']
 
                     # DEBUG
                     # print("t: ", t)
@@ -355,12 +360,12 @@ class Generator(object):
                     disc_proba = discriminator.get_rewards(sess,history_update)
                     disc_reward = np.array([item[1] for item in disc_proba])
                 # print("Reward for Complete Sentence ----- ", self.convert_id_to_text(complete_sentence[0], word_index), " ----- is = ",disc_reward[0])
-                    rewards[:, (t - 1)] += disc_reward  # disc_reward.reshape(self.batch_size, 1)
+                #     rewards[:, (t - 1)] += disc_reward  # disc_reward.reshape(self.batch_size, 1)
 
-                # if t ==1:
-                #     rewards[:, (t - 1)] += disc_reward * (sentence[:, (t - 1)] != word_index['eos'])
-                # else:
-                #     rewards[:, (t - 1)] += disc_reward * (sentence[:, (t - 2)] != word_index['eos'])
+                    if t ==1:
+                        rewards[:, (t - 1)] += disc_reward * (sentence[:, (t - 1)] != word_index['eos'])
+                    else:
+                        rewards[:, (t - 1)] += disc_reward * (sentence[:, (t - 2)] != word_index['eos'])
                 # print("History for Complete Sentence ----- "," is -------\n",self.convert_id_to_text(history_update[0:1], word_index))
                 #
                 # print("Sampled Sentence for ----", self.convert_id_to_text(gen_input_t[0:3], word_index),

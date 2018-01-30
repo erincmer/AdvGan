@@ -9,13 +9,14 @@ from keras.models import Model
 from keras import backend as K
 from keras.engine.topology import Layer, InputSpec
 import tensorflow as tf
+import readFBTask1
 
 MAX_SEQ_LENGTH = 200
 
 
 class DiscSentence(object):
     def __init__(self,num_emb, batch_size, emb_dim, hidden_dim,
-                 max_seq_length,word_index, end_token,
+                 max_seq_length,word_index, end_token,disc_name,
                  learning_rate=0.0004):
         self.max_seq_length = max_seq_length
         self.word_index = word_index
@@ -44,27 +45,27 @@ class DiscSentence(object):
 
 
             # Encoder definition
-        with tf.variable_scope("disc", reuse=None) as scope:
+        with tf.variable_scope("disc"+disc_name, reuse=None) as scope:
             self.enc_cell = tf.contrib.rnn.GRUCell(self.hidden_dim)
             self.encoder_outputs, self.encoder_state = tf.nn.dynamic_rnn(self.enc_cell, processed_x, self.input_lengths,
                                                                      self.prev_mem)
 
             out = tf.layers.dense(self.encoder_state,100,activation=tf.nn.relu)
             logits = tf.layers.dense(out, 2)
-        self.pred_train_output = tf.nn.softmax(logits)
-        self.disc_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = tf.one_hot(self.labels,2),logits = logits))
-        self.prediction = tf.cast(tf.argmax(logits,1),tf.int32)
-        self.disc_acc = tf.reduce_mean(tf.cast(tf.equal(self.prediction,self.labels),tf.float32))
+            self.pred_train_output = tf.nn.softmax(logits)
+            self.disc_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = tf.one_hot(self.labels,2),logits = logits))
+            self.prediction = tf.cast(tf.argmax(logits,1),tf.int32)
+            self.disc_acc = tf.reduce_mean(tf.cast(tf.equal(self.prediction,self.labels),tf.float32))
 
-        self.params = tf.trainable_variables()
+            self.params = tf.trainable_variables()
 
-        self.saver = tf.train.Saver(var_list=self.params)
-        self.gradients = tf.gradients(self.disc_loss, self.params)
-        self.clipped_gradients, _ = tf.clip_by_global_norm(self.gradients, self.grad_clip)
+            self.saver = tf.train.Saver(var_list=self.params)
+            self.gradients = tf.gradients(self.disc_loss, self.params)
+            self.clipped_gradients, _ = tf.clip_by_global_norm(self.gradients, self.grad_clip)
 
-        optimizer = self.d_optimizer(self.learning_rate)
-        self.pretrain_updates = optimizer.apply_gradients(
-            zip(self.clipped_gradients, self.params))
+            optimizer = self.d_optimizer(self.learning_rate)
+            self.pretrain_updates = optimizer.apply_gradients(
+                zip(self.clipped_gradients, self.params))
 
 
 
