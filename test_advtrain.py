@@ -131,6 +131,53 @@ def create_networks(EMB_DIM,END_TOKEN,word_index):
            generator_s2,discriminator_s2,baseline_s2,discriminator_s3,baseline_s3
 
 
+def preTrainS1(gen1,hist_s1,reply_s1,genEp):
+
+    hist_train = hist_s1
+    reply_train = reply_s1
+
+    idxTrain = np.arange(len(hist_train))
+
+
+    g_loss = 0
+    for ep in range(genEp):
+        np.random.shuffle(idxTrain)
+        for j in range(hist_train.shape[0] // headerSeq2Seq.BATCH_SIZE):
+            X = hist_train[idxTrain[j * headerSeq2Seq.BATCH_SIZE:(j + 1) * headerSeq2Seq.BATCH_SIZE], :]
+            Y_train = reply_train[idxTrain[j * headerSeq2Seq.BATCH_SIZE:(j + 1) * headerSeq2Seq.BATCH_SIZE], :]
+
+            _, g_loss, _ = gen1.pretrain_step(sess, X, Y_train)
+
+            if j == 0:
+
+                print("Gen Train Loss = ", g_loss, ep)
+
+                gen1.save_model(sess, savepathG_S1_Seq2Seq)
+
+
+def preTrainS2(gen2, hist_s2, reply_s2 ,genEp):
+    hist_train = hist_s2
+    reply_train = reply_s2
+
+    idxTrain = np.arange(len(hist_train))
+
+    g_loss = 0
+    for ep in range(genEp):
+        np.random.shuffle(idxTrain)
+        for j in range(hist_train.shape[0] // headerSeq2Seq.BATCH_SIZE):
+            X = hist_train[idxTrain[j * headerSeq2Seq.BATCH_SIZE:(j + 1) * headerSeq2Seq.BATCH_SIZE], :]
+            Y_train = reply_train[idxTrain[j * headerSeq2Seq.BATCH_SIZE:(j + 1) * headerSeq2Seq.BATCH_SIZE], :]
+
+            _, g_loss, _ = gen2.pretrain_step(sess, X, Y_train)
+
+            if j == 0:
+                print("Gen Train Loss = ", g_loss, ep)
+
+                gen2.save_model(sess, savepathG_S2_Seq2Seq)
+
+
+
+
 def trainS1(gen1,disc1,base1,hist_s1,reply_s1,d_steps = 2,g_steps = 1,lr=0.000001):
 
 
@@ -482,13 +529,16 @@ savepathG_S2_Seq2Seq = 'GeneratorModel/S2/Seq2Seq/'
 savepathD_S1 = 'DiscModel/S1/'
 savepathD_S2 = 'DiscModel/S2/'
 
+
+
+
 # Load data
 (embedding_matrix,
 train_data,test_data,
  word_index) = readFBTask1Seq2Seq.create_con(True, headerSeq2Seq.MAX_SEQ_LENGTH,headerSeq2Seq.REP_SEQ_LENGTH)
 
 
-
+create_folders()
 
 EMB_DIM = len(word_index) + 1  # embedding dimension
 END_TOKEN = word_index.get("eos")
@@ -550,7 +600,7 @@ except:
 
 
 # pretrain.pretrain(sess,disc1,gen1,discEp,genEp,train_Disc,train_Gen,savepathD_S1,savepathG_S1_Seq2Seq)
-pretrain.pretrain(sess,disc2,gen2,discEp,genEp,train_Disc,train_Gen,savepathD_S2,savepathG_S2_Seq2Seq)
+# pretrain.pretrain(sess,disc2,gen2,discEp,genEp,train_Disc,train_Gen,savepathD_S2,savepathG_S2_Seq2Seq)
 
 
 hist_s1 = train_data["hist_s1"]
@@ -576,6 +626,11 @@ test_reply_s2 = test_data["reply_s2"]
 test_reply_s2_OOV = test_data["reply_s2_OOV"]
 
 
+
+
+
+
+preTrainS2(gen2,hist_s2,reply_s2,10)
 for e in range(100):
 
     testS2_onTest(gen2, hist_s2, reply_s2, test_hist_s2, test_reply_s2, test_hist_s2_OOV, test_reply_s2_OOV)
