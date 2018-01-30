@@ -21,7 +21,7 @@ def pretrain(sess,discriminator,generator,discEp,genEp,trainDisc,trainGen,savepa
      x_test,
      y_train,
      y_test,
-     word_index) = readFBTask1Seq2Seq.create_con(False, header.MAX_SEQ_LENGTH)
+     word_index) = readFBTask1Seq2Seq.create_con(True, header.MAX_SEQ_LENGTH,header.REP_SEQ_LENGTH)
 
 
     if not os.path.exists(savepathD):
@@ -59,7 +59,7 @@ def pretrain(sess,discriminator,generator,discEp,genEp,trainDisc,trainGen,savepa
         idxTrain = np.arange(len(hist_train))
         idxTest = np.arange(len(hist_test))
 
-
+        g_loss = 0
         for ep in range(genEp):
             np.random.shuffle(idxTrain)
             for j in range(hist_train.shape[0] // header.BATCH_SIZE):
@@ -70,7 +70,7 @@ def pretrain(sess,discriminator,generator,discEp,genEp,trainDisc,trainGen,savepa
                 # tools.convert_id_to_text(np.array(Y_train)[0:3, :], word_index)
                 # input("wait")
 
-                _, g_loss, _ = generator.pretrain_step(sess, X, Y_train)
+
                 if j % 100 == 0:
                     print("Gen Train Loss = ", g_loss, ep)
                     X = hist_test[idxTest[: header.BATCH_SIZE], :]
@@ -90,10 +90,10 @@ def pretrain(sess,discriminator,generator,discEp,genEp,trainDisc,trainGen,savepa
 
                     generator.save_model(sess, savepathG)
 
-
+                _, g_loss, _ = generator.pretrain_step(sess, X, Y_train)
 
 
 if __name__ == '__main__':
-    savepathG = 'GeneratorModel/'  # best is saved here
-    savepathD = 'DiscModel/'
+    savepathG = 'GeneratorModelLong/'  # best is saved here
+    savepathD = 'DiscModelLong/'
     pretrain(savepathD, savepathG)
