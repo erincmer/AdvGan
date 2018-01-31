@@ -6,78 +6,83 @@ from tensorflow.python.layers import core as layers_core
 from tensorflow.contrib.seq2seq.python.ops.helper import MonteCarloEmbeddingHelper as MonteCarloHelper
 
 
+def zipsame(*seqs):
+    L = len(seqs[0])
+    assert all(len(seq) == L for seq in seqs[1:])
+    return zip(*seqs)
+
 class Generator(object):
     def __init__(self, num_emb, batch_size, emb_dim, hidden_dim,
                  sequence_length, rep_sequence_length, start_token, end_token,gen_name,
                  learning_rate=0.00001, reward_gamma=1.00):
-
-        self.num_emb = num_emb  # vocab size
-        self.batch_size = batch_size
-        self.emb_dim = emb_dim
-        self.hidden_dim = hidden_dim
-        self.sequence_length = sequence_length
-        self.rep_sequence_length = rep_sequence_length
-        self.end_token = end_token
-
-        self.start_tokens = tf.constant([start_token] * self.batch_size, dtype=tf.int32)
-        self.end_tokens = tf.constant([end_token] * self.batch_size, dtype=tf.int32)
-        self.start_tokens_check = tf.constant([start_token + 5] * self.batch_size, dtype=tf.int32)
-        # self.start_token = tf.constant([start_token] * self.batch_size, dtype=tf.int32)
-        self.learning_rate = tf.Variable(float(learning_rate), trainable=False)
-        self.learning_rate_placeholer =  tf.placeholder(tf.float32)
-        self.reward_gamma = reward_gamma
-        self.g_params = []
-        self.temperature = 1.0
-        self.grad_clip = 5.0
-        self.expected_reward = tf.Variable(tf.zeros([self.sequence_length]))
-
-        self.prev_mem = tf.zeros((batch_size, self.hidden_dim))  # h_{t-1}
-        self.enc_inp = tf.placeholder(tf.int32, shape=[batch_size, self.sequence_length],
-                                      name="encoderInputs")  # history
-        self.labels = tf.placeholder(tf.int32, shape=[batch_size, self.rep_sequence_length],
-                                     name="labels")  # expected sentence
-        self.sentence = tf.placeholder(tf.int32, shape=[batch_size, self.rep_sequence_length],
-                                       name="sentence")  # generated sentence
-
-        # self.start_tokens = tf.zeros([batch_size],tf.int32)
-        self.dec_inp = tf.concat([tf.expand_dims(self.start_tokens, 1), self.labels], 1)
-
-        self.input_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.enc_inp, self.end_token)), 1)
-        self.output_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.dec_inp, self.end_token)), 1)
-        self.output_lengths_full = tf.constant([self.rep_sequence_length] * self.batch_size, dtype=tf.int32)
-        self.g_embeddings = tf.Variable(tf.constant(0.0, shape=[self.num_emb, self.emb_dim]),
-                                        trainable=False, name="W")
-        self.embedding_placeholder = tf.placeholder(tf.float32, [self.num_emb, self.emb_dim])
-        self.embedding_init = self.g_embeddings.assign(self.embedding_placeholder)
-        self.lr_init = self.learning_rate.assign(self.learning_rate_placeholer)
-        # rewards[t] : rewards of the first t words of the generated sentence
-        # baseline[t] : baseline of the first t words
-        # word_proba[t] = p(y_t | X, y_{0:t-1}
-        self.rewards = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length], name="rewards")
-        self.baseline = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length], name="baseline")
-
-        # Interactive training feed dict
-        self.sentence_proba = tf.placeholder(
-                tf.float32,
-                shape=[64,None],
-                name="sentence_proba")
-        self.sentence_rewards = tf.placeholder(
-                tf.float32,
-                shape=[64,None],
-                name="sentence_rewards")
-        self.sentence_baseline = tf.placeholder(
-                tf.float32,
-                shape=[64,None],
-                name="sentence_baseline")
-
-
-        with tf.device("/cpu:0"):
-            # processed_x = tf.transpose(tf.nn.embedding_lookup(self.g_embeddings, self.enc_inp), perm=[1, 0, 2])
-            # processed_y = tf.transpose(tf.nn.embedding_lookup(self.g_embeddings, self.dec_inp), perm=[1, 0, 2])
-            processed_x = tf.transpose(tf.nn.embedding_lookup(self.g_embeddings, self.enc_inp), perm=[0, 1, 2])
-            processed_y = tf.transpose(tf.nn.embedding_lookup(self.g_embeddings, self.dec_inp), perm=[0, 1, 2])
-
         with tf.variable_scope(gen_name) as scope:
+            self.num_emb = num_emb  # vocab size
+            self.batch_size = batch_size
+            self.emb_dim = emb_dim
+            self.hidden_dim = hidden_dim
+            self.sequence_length = sequence_length
+            self.rep_sequence_length = rep_sequence_length
+            self.end_token = end_token
+            self.name = gen_name
+
+            self.start_tokens = tf.constant([start_token] * self.batch_size, dtype=tf.int32)
+            self.end_tokens = tf.constant([end_token] * self.batch_size, dtype=tf.int32)
+            self.start_tokens_check = tf.constant([start_token + 5] * self.batch_size, dtype=tf.int32)
+            # self.start_token = tf.constant([start_token] * self.batch_size, dtype=tf.int32)
+            self.learning_rate = tf.Variable(float(learning_rate), trainable=False)
+            self.learning_rate_placeholer =  tf.placeholder(tf.float32)
+            self.reward_gamma = reward_gamma
+            self.g_params = []
+            self.temperature = 1.0
+            self.grad_clip = 5.0
+            self.expected_reward = tf.Variable(tf.zeros([self.sequence_length]))
+
+            self.prev_mem = tf.zeros((batch_size, self.hidden_dim))  # h_{t-1}
+            self.enc_inp = tf.placeholder(tf.int32, shape=[batch_size, self.sequence_length],
+                                          name="encoderInputs")  # history
+            self.labels = tf.placeholder(tf.int32, shape=[batch_size, self.rep_sequence_length],
+                                         name="labels")  # expected sentence
+            self.sentence = tf.placeholder(tf.int32, shape=[batch_size, self.rep_sequence_length],
+                                           name="sentence")  # generated sentence
+
+            # self.start_tokens = tf.zeros([batch_size],tf.int32)
+            self.dec_inp = tf.concat([tf.expand_dims(self.start_tokens, 1), self.labels], 1)
+
+            self.input_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.enc_inp, self.end_token)), 1)
+            self.output_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.dec_inp, self.end_token)), 1)
+            self.output_lengths_full = tf.constant([self.rep_sequence_length] * self.batch_size, dtype=tf.int32)
+            self.g_embeddings = tf.Variable(tf.constant(0.0, shape=[self.num_emb, self.emb_dim]),
+                                            trainable=False, name="W")
+            self.embedding_placeholder = tf.placeholder(tf.float32, [self.num_emb, self.emb_dim])
+            self.embedding_init = self.g_embeddings.assign(self.embedding_placeholder)
+            self.lr_init = self.learning_rate.assign(self.learning_rate_placeholer)
+            # rewards[t] : rewards of the first t words of the generated sentence
+            # baseline[t] : baseline of the first t words
+            # word_proba[t] = p(y_t | X, y_{0:t-1}
+            self.rewards = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length], name="rewards")
+            self.baseline = tf.placeholder(tf.float32, shape=[self.batch_size, self.rep_sequence_length], name="baseline")
+
+            # Interactive training feed dict
+            self.sentence_proba = tf.placeholder(
+                    tf.float32,
+                    shape=[64,None],
+                    name="sentence_proba")
+            self.sentence_rewards = tf.placeholder(
+                    tf.float32,
+                    shape=[64,None],
+                    name="sentence_rewards")
+            self.sentence_baseline = tf.placeholder(
+                    tf.float32,
+                    shape=[64,None],
+                    name="sentence_baseline")
+
+
+            with tf.device("/cpu:0"):
+                # processed_x = tf.transpose(tf.nn.embedding_lookup(self.g_embeddings, self.enc_inp), perm=[1, 0, 2])
+                # processed_y = tf.transpose(tf.nn.embedding_lookup(self.g_embeddings, self.dec_inp), perm=[1, 0, 2])
+                processed_x = tf.transpose(tf.nn.embedding_lookup(self.g_embeddings, self.enc_inp), perm=[0, 1, 2])
+                processed_y = tf.transpose(tf.nn.embedding_lookup(self.g_embeddings, self.dec_inp), perm=[0, 1, 2])
+
 
             # Encoder definition
             self.enc_cell = tf.contrib.rnn.GRUCell(self.hidden_dim)
@@ -97,197 +102,270 @@ class Generator(object):
 
 
 
-        # # pred_helper = tf.contrib.seq2seq.TrainingHelper(processed_y, self.output_lengths_full)
-        # train_helper = tf.contrib.seq2seq.ScheduledEmbeddingTrainingHelper(
-        #     processed_y, self.output_lengths_full,
-        #     self.g_embeddings,
-        #     sampling_probability=0.0)
-        # pred_helper = tf.contrib.seq2seq.ScheduledEmbeddingTrainingHelper(
-        #     self.g_embeddings, start_tokens=tf.to_int32(self.start_tokens), end_token=1,sampling_probability=sampling_prob)
+            # # pred_helper = tf.contrib.seq2seq.TrainingHelper(processed_y, self.output_lengths_full)
+            # train_helper = tf.contrib.seq2seq.ScheduledEmbeddingTrainingHelper(
+            #     processed_y, self.output_lengths_full,
+            #     self.g_embeddings,
+            #     sampling_probability=0.0)
+            # pred_helper = tf.contrib.seq2seq.ScheduledEmbeddingTrainingHelper(
+            #     self.g_embeddings, start_tokens=tf.to_int32(self.start_tokens), end_token=1,sampling_probability=sampling_prob)
 
-        def decode(helper, scope, reuse=None):
-            with tf.variable_scope(scope, reuse=reuse):
-                attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(
-                    num_units=self.hidden_dim, memory=self.encoder_outputs,
-                    memory_sequence_length=self.input_lengths)
-                cell = tf.contrib.rnn.GRUCell(num_units=self.hidden_dim)
-                attn_cell = tf.contrib.seq2seq.AttentionWrapper(
-                    cell, attention_mechanism, attention_layer_size=self.hidden_dim / 2)
-                out_cell = tf.contrib.rnn.OutputProjectionWrapper(
-                    attn_cell, self.num_emb, reuse=reuse
-                )
+            def decode(helper, scope, reuse=None):
+                with tf.variable_scope(scope, reuse=reuse):
+                    attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(
+                        num_units=self.hidden_dim, memory=self.encoder_outputs,
+                        memory_sequence_length=self.input_lengths)
+                    cell = tf.contrib.rnn.GRUCell(num_units=self.hidden_dim)
+                    attn_cell = tf.contrib.seq2seq.AttentionWrapper(
+                        cell, attention_mechanism, attention_layer_size=self.hidden_dim / 2)
+                    out_cell = tf.contrib.rnn.OutputProjectionWrapper(
+                        attn_cell, self.num_emb, reuse=reuse
+                    )
 
-                projection_layer = layers_core.Dense(self.num_emb, use_bias=False)
+                    projection_layer = layers_core.Dense(self.num_emb, use_bias=False)
 
-                decoder = tf.contrib.seq2seq.BasicDecoder(
-                    cell=out_cell, helper=helper,
-                    initial_state=out_cell.zero_state(
-                        dtype=tf.float32, batch_size=batch_size),
-                    # initial_state=self.encoder_state,
-                    output_layer=projection_layer
-                )
+                    decoder = tf.contrib.seq2seq.BasicDecoder(
+                        cell=out_cell, helper=helper,
+                        initial_state=out_cell.zero_state(
+                            dtype=tf.float32, batch_size=batch_size),
+                        # initial_state=self.encoder_state,
+                        output_layer=projection_layer
+                    )
 
-                outputs = tf.contrib.seq2seq.dynamic_decode(
-                    decoder=decoder, output_time_major=False,
-                    impute_finished=False, maximum_iterations=self.rep_sequence_length
-                )
-                return outputs
+                    outputs = tf.contrib.seq2seq.dynamic_decode(
+                        decoder=decoder, output_time_major=False,
+                        impute_finished=False, maximum_iterations=self.rep_sequence_length
+                    )
+                    return outputs
 
-        self.train_outputs = decode(train_helper, 'decode'+gen_name)
-        self.gen_x = decode(pred_helper, 'decode'+gen_name, reuse=True)
-        self.test_x = decode(test_helper, 'decode'+gen_name, reuse=True)
-        # tf.identity(self.train_outputs.sample_id[0], name='train_pred')
-        # tf.identity(self.train_outputs.rnn_output[0], name='train_pred')
+            self.train_outputs = decode(train_helper, 'decode'+gen_name)
+            self.gen_x = decode(pred_helper, 'decode'+gen_name, reuse=True)
+            self.test_x = decode(test_helper, 'decode'+gen_name, reuse=True)
+            # tf.identity(self.train_outputs.sample_id[0], name='train_pred')
+            # tf.identity(self.train_outputs.rnn_output[0], name='train_pred')
 
-        # weights = tf.to_float(tf.not_equal(self.dec_inp[:, :-1], self.end_token))
+            # weights = tf.to_float(tf.not_equal(self.dec_inp[:, :-1], self.end_token))
 
-        weights = tf.to_float(tf.not_equal(self.dec_inp[:, :-1], 400))
+            weights = tf.to_float(tf.not_equal(self.dec_inp[:, :-1], 400))
 
-        # print(self.labels.get_shape())
-        # print(weights.get_shape())
-        # print(self.train_outputs[0].rnn_output.get_shape())
-        # input("wait")
-        self.pretrain_loss = tf.contrib.seq2seq.sequence_loss(
-            logits=self.train_outputs[0].rnn_output, targets=self.labels, weights=weights)
+            # print(self.labels.get_shape())
+            # print(weights.get_shape())
+            # print(self.train_outputs[0].rnn_output.get_shape())
+            # input("wait")
+            self.pretrain_loss = tf.contrib.seq2seq.sequence_loss(
+                logits=self.train_outputs[0].rnn_output, targets=self.labels, weights=weights)
 
-        # crossent = tf.nn.sparse_softmax_cross_entropy_with_logits(
-        #     labels=self.labels, logits=self.train_outputs.rnn_output)
-        #
-        # self.pretrain_loss = (tf.reduce_sum(crossent * weights) /
-        #               batch_size)
-        self.pred_output = tf.nn.softmax(self.gen_x[0].rnn_output)
-        self.test_output = tf.nn.softmax(self.test_x[0].rnn_output)
-        self.pred_train_output = self.train_outputs[0].rnn_output
+            # crossent = tf.nn.sparse_softmax_cross_entropy_with_logits(
+            #     labels=self.labels, logits=self.train_outputs.rnn_output)
+            #
+            # self.pretrain_loss = (tf.reduce_sum(crossent * weights) /
+            #               batch_size)
+            self.pred_output = tf.nn.softmax(self.gen_x[0].rnn_output)
+            self.test_output = tf.nn.softmax(self.test_x[0].rnn_output)
+            self.pred_train_output = self.train_outputs[0].rnn_output
 
-        self.pred_output_ids = self.gen_x[0].sample_id
-        self.test_output_ids = self.test_x[0].sample_id
-        self.pred_train_output_ids = self.train_outputs[0].sample_id
+            self.pred_output_ids = self.gen_x[0].sample_id
+            self.test_output_ids = self.test_x[0].sample_id
+            self.pred_train_output_ids = self.train_outputs[0].sample_id
 
-        self.gen_sentence_proba = tf.reduce_prod(
-                tf.reduce_sum(
-                    tf.one_hot(
-                        tf.to_int32( self.pred_output_ids),
-                        self.num_emb, 1.0, 0.0) *
-                    tf.clip_by_value( 
-                        tf.nn.softmax(self.gen_x[0].rnn_output),
-                        1e-20, 1.0),
-                    2),
-                1) # proba of the generated sentence
-
-        self.params = tf.trainable_variables()
-        self.saver = tf.train.Saver(var_list=self.params)
-        self.gradients = tf.gradients(self.pretrain_loss, self.params)
-        self.clipped_gradients, _ = tf.clip_by_global_norm(self.gradients, self.grad_clip)
-
-        optimizer = self.g_optimizer(self.learning_rate)
-        self.pretrain_updates = optimizer.apply_gradients(
-            zip(self.clipped_gradients, self.params))
-
-        # Adversarial optimization
-        # DEBUG
-        # print("\ntrain variables: \n",tf.trainable_variables())
-        # print("self.sentence.get_shpae(): ", self.sentence.get_shape())
-        # print("self.rewards.get_shape()): ", self.rewards.get_shape())
-        # print("self.baseline.get_shape()): ", self.baseline.get_shape())
-
-        self.g_loss = -tf.reduce_mean(tf.reduce_sum(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0) *
-                                    tf.log(
-                              tf.clip_by_value(tf.reshape(tf.nn.softmax(self.gen_x[0].rnn_output), [-1, self.num_emb]), 1e-20,
-                                               1.0)),1)* (tf.reshape(self.rewards, [-1]) - tf.reshape(self.baseline, [-1])))
-
-        self.g_part0 =  tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0)
-
-        self.g_part1 =  tf.log(tf.clip_by_value(tf.nn.softmax(tf.reshape(self.gen_x[0].rnn_output, [-1, self.num_emb])), 1e-20,1.0))
-
-        self.g_part2 = tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0) * tf.log(
-                              tf.clip_by_value(tf.reshape(tf.nn.softmax(self.gen_x[0].rnn_output), [-1, self.num_emb]), 1e-20,
-                                               1.0))
-        self.g_part3 = -tf.reduce_sum(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0) *tf.log(
-                              tf.clip_by_value(tf.reshape(tf.nn.softmax(self.gen_x[0].rnn_output), [-1, self.num_emb]), 1e-20,
-                                               1.0)),1)
-        self.g_part4 = (tf.reshape(self.rewards, [-1]) - tf.reshape(self.baseline, [-1]))
-
-        # self.g_loss = -tf.reduce_sum(
-        #     tf.reduce_mean(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 0.0, 1.0) *tf.log(tf.clip_by_value(tf.reshape(tf.nn.softmax(self.pred_output[0]),
-        #                                                                                                                                         [-1, self.num_emb]), 1e-20,1.0)))
-        #     * (tf.reshape(self.rewards, [-1]) - tf.reshape(self.baseline, [-1])))
-        g_opt = self.g_optimizer(self.learning_rate)
-        self.g_grad, _ = tf.clip_by_global_norm(tf.gradients(self.g_loss, self.params), self.grad_clip)
-        self.g_updates = g_opt.apply_gradients(zip(self.g_grad, self.params))
-
-        # PPO optimization V1 standalone
-        # I use only the proba of the words inside the generated sentence to
-        # compute the ratio. I am not sure if it is the correct way.
-        self.old_distro = tf.placeholder(
-                tf.float32, 
-                shape=[self.batch_size, self.rep_sequence_length, self.emb_dim],
-                name="old_distro")
-        self.clip_param = 0.2
-
-        # Normalize rewards (maybe unnecessary) and flatten it
-        mean = tf.reduce_mean(self.rewards, axis=[1], keep_dims=True)
-        var = tf.reduce_mean(tf.square(self.rewards-mean), axis=[1], keep_dims=False)
-        std = tf.expand_dims(tf.sqrt(var), 1)
-        atarg = tf.reshape((self.rewards - mean)/std, [-1])  # A estimator
-        print("atarg.get_shape(): ", atarg.get_shape())
-
-        # Flatten probas
-        new_proba = tf.reduce_sum( # proba of words in the generated sentence only
-                tf.one_hot(
-                    tf.to_int32(tf.reshape(self.sentence, [-1])),
-                    self.num_emb, 1.0, 0.0) *  tf.clip_by_value(
-                        tf.reshape(tf.nn.softmax(self.gen_x[0].rnn_output), 
-                            [-1, self.num_emb]), 
-                        1e-20, 1.0),1)
-        old_proba = tf.reduce_sum( # old proba of words in the generated sentence only
-                tf.one_hot(
-                    tf.to_int32(tf.reshape(self.sentence, [-1])),
-                    self.num_emb, 1.0, 0.0) *  tf.clip_by_value(
-                        tf.reshape(self.old_distro, 
-                            [-1, self.num_emb]), 
-                        1e-20, 1.0),1)
-
-        ratio = new_proba / old_proba # r
-        print("ratio.get_shape(): ", ratio.get_shape())
-        surr1 = ratio * atarg # r * A
-        # clipped version of r*A
-        surr2 = tf.clip_by_value(ratio, 1.0 - self.clip_param, 1.0 + self.clip_param) * atarg
-        pol_surr = - tf.reduce_mean(tf.minimum(surr1, surr2)) # -L^CLIP
-        
-        # Optimization
-        self.ppo_loss = pol_surr
-        ppo_opt = tf.train.AdamOptimizer(self.learning_rate)
-        self.ppo_grad, _ = tf.clip_by_global_norm(tf.gradients(self.ppo_loss, self.params), self.grad_clip)
-        self.ppo_updates = ppo_opt.apply_gradients(zip(self.ppo_grad, self.params))
-
-        # End of PPO V1 standalone
-
-        # Reinforce optimization interact V1 
-        # Use other agent reward as baseline
-        self.last_sentence_proba = tf.reduce_prod(
-                tf.reduce_sum(
-                    tf.one_hot(
-                        tf.to_int32(
-                            self.sentence), 
-                        self.num_emb, 1.0, 0.0) * tf.clip_by_value(
-                            tf.nn.softmax(self.gen_x[0].rnn_output), 
+            self.gen_sentence_proba = tf.reduce_prod(
+                    tf.reduce_sum(
+                        tf.one_hot(
+                            tf.to_int32( self.pred_output_ids),
+                            self.num_emb, 1.0, 0.0) *
+                        tf.clip_by_value( 
+                            tf.nn.softmax(self.gen_x[0].rnn_output),
                             1e-20, 1.0),
                         2),
-                1)
+                    1) # proba of the generated sentence
 
-        self.inter_loss = -tf.reduce_sum(
-                tf.reduce_sum( 
-                    self.sentence_proba[:,:-1] * (
-                        self.sentence_rewards[:,:-1] 
-                        - self.sentence_baseline[:,:-1])
-                    , 1) - self.last_sentence_proba *(
-                        self.sentence_rewards[:,-1] 
-                        - self.sentence_baseline[:,-1]) )
+            self.params = tf.trainable_variables()
+            self.saver = tf.train.Saver(var_list=self.params)
+            self.gradients = tf.gradients(self.pretrain_loss, self.params)
+            self.clipped_gradients, _ = tf.clip_by_global_norm(self.gradients, self.grad_clip)
 
-        inter_opt = tf.train.AdamOptimizer(self.learning_rate)
-        self.inter_grad, _ = tf.clip_by_global_norm(tf.gradients(self.inter_loss, self.params), self.grad_clip)
-        self.inter_updates = inter_opt.apply_gradients(zip(self.inter_grad, self.params))
-        # End of Reinforce optimization standalone
+            optimizer = self.g_optimizer(self.learning_rate)
+            self.pretrain_updates = optimizer.apply_gradients(
+                zip(self.clipped_gradients, self.params))
+
+            # Adversarial optimization
+            # DEBUG
+            # print("\ntrain variables: \n",tf.trainable_variables())
+            # print("self.sentence.get_shpae(): ", self.sentence.get_shape())
+            # print("self.rewards.get_shape()): ", self.rewards.get_shape())
+            # print("self.baseline.get_shape()): ", self.baseline.get_shape())
+
+            self.g_loss = -tf.reduce_mean(tf.reduce_sum(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0) *
+                                        tf.log(
+                                  tf.clip_by_value(tf.reshape(tf.nn.softmax(self.gen_x[0].rnn_output), [-1, self.num_emb]), 1e-20,
+                                                   1.0)),1)* (tf.reshape(self.rewards, [-1]) - tf.reshape(self.baseline, [-1])))
+
+            self.g_part0 =  tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0)
+
+            self.g_part1 =  tf.log(tf.clip_by_value(tf.nn.softmax(tf.reshape(self.gen_x[0].rnn_output, [-1, self.num_emb])), 1e-20,1.0))
+
+            self.g_part2 = tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0) * tf.log(
+                                  tf.clip_by_value(tf.reshape(tf.nn.softmax(self.gen_x[0].rnn_output), [-1, self.num_emb]), 1e-20,
+                                                   1.0))
+            self.g_part3 = -tf.reduce_sum(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 1.0, 0.0) *tf.log(
+                                  tf.clip_by_value(tf.reshape(tf.nn.softmax(self.gen_x[0].rnn_output), [-1, self.num_emb]), 1e-20,
+                                                   1.0)),1)
+            self.g_part4 = (tf.reshape(self.rewards, [-1]) - tf.reshape(self.baseline, [-1]))
+
+            # self.g_loss = -tf.reduce_sum(
+            #     tf.reduce_mean(tf.one_hot(tf.to_int32(tf.reshape(self.sentence, [-1])), self.num_emb, 0.0, 1.0) *tf.log(tf.clip_by_value(tf.reshape(tf.nn.softmax(self.pred_output[0]),
+                                                                                                                        #                                                                                                                                         [-1, self.num_emb]), 1e-20,1.0)))
+            #     * (tf.reshape(self.rewards, [-1]) - tf.reshape(self.baseline, [-1])))
+            g_opt = self.g_optimizer(self.learning_rate)
+            self.g_grad, _ = tf.clip_by_global_norm(tf.gradients(self.g_loss, self.params), self.grad_clip)
+            self.g_updates = g_opt.apply_gradients(zip(self.g_grad, self.params))
+
+            # PPO optimization V1 standalone
+            # I use only the proba of the words inside the generated sentence to
+            # compute the ratio. I am not sure if it is the correct way.
+            self.old_distro = tf.placeholder(
+                    tf.float32, 
+                    shape=[self.batch_size, self.rep_sequence_length, self.emb_dim],
+                    name="old_distro")
+            self.clip_param = 0.2
+
+            # Normalize rewards (maybe unnecessary) and flatten it
+            mean = tf.reduce_mean(self.rewards, axis=[1], keep_dims=True)
+            var = tf.reduce_mean(tf.square(self.rewards-mean), axis=[1], keep_dims=False)
+            std = tf.expand_dims(tf.sqrt(var), 1)
+            atarg = tf.reshape((self.rewards - mean)/std, [-1])  # A estimator
+            print("atarg.get_shape(): ", atarg.get_shape())
+
+            # Flatten probas
+            new_proba = tf.reduce_sum( # proba of words in the generated sentence only
+                    tf.one_hot(
+                        tf.to_int32(tf.reshape(self.sentence, [-1])),
+                        self.num_emb, 1.0, 0.0) *  tf.clip_by_value(
+                            tf.reshape(tf.nn.softmax(self.gen_x[0].rnn_output), 
+                                [-1, self.num_emb]), 
+                            1e-20, 1.0),1)
+            old_proba = tf.reduce_sum( # old proba of words in the generated sentence only
+                    tf.one_hot(
+                        tf.to_int32(tf.reshape(self.sentence, [-1])),
+                        self.num_emb, 1.0, 0.0) *  tf.clip_by_value(
+                            tf.reshape(self.old_distro, 
+                                [-1, self.num_emb]), 
+                            1e-20, 1.0),1)
+
+            ratio = new_proba / old_proba # rheaderSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH
+            print("ratio.get_shape(): ", ratio.get_shape())
+            surr1 = ratio * atarg # r * A
+            # clipped version of r*A
+            surr2 = tf.clip_by_value(ratio, 1.0 - self.clip_param, 1.0 + self.clip_param) * atarg
+            pol_surr = - tf.reduce_mean(tf.minimum(surr1, surr2)) # -L^CLIP
+            
+            # Optimization
+            self.ppo_loss = pol_surr
+            ppo_opt = tf.train.AdamOptimizer(self.learning_rate)
+            self.ppo_grad, _ = tf.clip_by_global_norm(tf.gradients(self.ppo_loss, self.params), self.grad_clip)
+            self.ppo_updates = ppo_opt.apply_gradients(zip(self.ppo_grad, self.params))
+
+            # End of PPO V1 standalone
+
+            # Reinforce optimization interact V1 
+            # Use other agent reward as baseline
+            self.last_sentence_proba = tf.reduce_prod(
+                    tf.reduce_sum(
+                        tf.one_hot(
+                            tf.to_int32(
+                                self.sentence), 
+                            self.num_emb, 1.0, 0.0) * tf.clip_by_value(
+                                tf.nn.softmax(self.gen_x[0].rnn_output), 
+                                1e-20, 1.0),
+                            2),
+                    1)
+
+            self.inter_loss = -tf.reduce_sum(
+                    tf.reduce_sum( 
+                        self.sentence_proba[:,:-1] * (
+                            self.sentence_rewards[:,:-1] 
+                            - self.sentence_baseline[:,:-1])
+                        , 1) - self.last_sentence_proba *(
+                            self.sentence_rewards[:,-1] 
+                            - self.sentence_baseline[:,-1]) )
+
+            inter_opt = tf.train.AdamOptimizer(self.learning_rate)
+            self.inter_grad, _ = tf.clip_by_global_norm(tf.gradients(self.inter_loss, self.params), self.grad_clip)
+            self.inter_updates = inter_opt.apply_gradients(zip(self.inter_grad, self.params))
+            # End of Reinforce optimization standalone
+    
+
+    def test_eq(self, sess, g_old):
+        oldpi_var = tf.get_collection(
+                tf.GraphKeys.GLOBAL_VARIABLES, 
+                scope = g_old.name)
+        pi_var = tf.get_collection(
+                tf.GraphKeys.GLOBAL_VARIABLES, 
+                scope = self.name)
+        #print("\noldpi_var: ", oldpi_var)
+        #print("\npi_var: ", pi_var)
+
+        test_eq_before = [tf.reduce_all(tf.equal(oldv, newv)) for (oldv,newv) in zipsame(oldpi_var, pi_var)]
+        v = sess.run(test_eq_before)
+        v = np.array(v)
+
+        if np.sum(v)==np.prod(v.shape):
+            print("They are equal")
+            return True
+        else:
+            print("Not equal")
+            return False
+
+    def copy(self, sess, g_old):
+        
+        oldpi_var = tf.get_collection(
+                tf.GraphKeys.GLOBAL_VARIABLES, 
+                scope = g_old.name)
+        pi_var = tf.get_collection(
+                tf.GraphKeys.GLOBAL_VARIABLES, 
+                scope = self.name)
+        #print("\noldpi_var: ", oldpi_var)
+        #print("\npi_var: ", pi_var)
+
+        test_eq_same = [tf.reduce_all(tf.equal(oldv, newv)) for (oldv,newv) in zipsame(pi_var, pi_var)]
+        
+        
+        test_eq_before = [tf.reduce_all(tf.equal(oldv, newv)) for (oldv,newv) in zipsame(oldpi_var, pi_var)]
+        
+        assign_old_eq_new = [tf.assign(oldv, newv) for (oldv,newv) in zipsame(oldpi_var, pi_var)]
+        old_name = [oldv.name for (oldv,newv) in zipsame(oldpi_var, pi_var)]
+        new_name = [newv.name for (oldv,newv) in zipsame(oldpi_var, pi_var)]
+
+        #print("\nzipsame: ")
+        #test_print = [print("oldv-newv: ", oldv, " ", newv) for (oldv,newv) in zipsame(oldpi_var, pi_var)]
+        with tf.control_dependencies(assign_old_eq_new):
+            test_eq = [tf.reduce_all(tf.equal(oldv, newv)) for (oldv,newv) in zipsame(oldpi_var, pi_var)]
+
+        _,v_eq, v_eq_before, v_name, v_name_before, v_same = sess.run([assign_old_eq_new, 
+            test_eq, 
+            test_eq_before, 
+            old_name, 
+            new_name,
+            test_eq_same])
+        
+        # DEBUG 
+        #i=0
+        #for (oldv,newv) in zipsame(oldpi_var, pi_var):
+        #    if ~v_eq_before[i]:
+        #        print("Before var diff: ", oldv.name)
+        #    i+=1
+        #
+        #i=0
+        #for (oldv,newv) in zipsame(oldpi_var, pi_var):
+        #    if ~v_eq[i]:
+        #        print("After var diff: ", oldv.name)
+        #    i+=1
+
+        #i=0
+        #for (oldv,newv) in zipsame(oldpi_var, pi_var):
+        #    if ~v_same[i]:
+        #        print("Test same: ", oldv.name)
+        #    i+=1
 
 
     def ppo_step(self, sess, history, labels, sentence, rewards, old_distro):
