@@ -594,7 +594,7 @@ def create_con( create_data,MAX_SEQUENCE_LENGTH,MAX_REP_SEQUENCE_LENGTH):
 
         with open('Train_Task1.pickle', 'rb') as output:
             train_data = pickle.load(output)
-        with open('Train_Task1.pickle', 'rb') as output:
+        with open('Test_Task1.pickle', 'rb') as output:
             test_data = pickle.load(output)
 
 
