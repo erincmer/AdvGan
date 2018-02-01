@@ -9,6 +9,7 @@ from keras.models import Model
 from keras import backend as K
 from keras.engine.topology import Layer, InputSpec
 import tensorflow as tf
+import readFBTask1
 
 MAX_SEQ_LENGTH = 200
 
@@ -52,6 +53,7 @@ class DiscSentence(object):
             out = tf.layers.dense(self.encoder_state,100,activation=tf.nn.relu)
             logits = tf.layers.dense(out, 2)
             self.pred_train_output = tf.nn.softmax(logits)
+            self.pred_train_output_log = tf.log(tf.nn.softmax(logits))
             self.disc_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = tf.one_hot(self.labels,2),logits = logits))
             self.prediction = tf.cast(tf.argmax(logits,1),tf.int32)
             self.disc_acc = tf.reduce_mean(tf.cast(tf.equal(self.prediction,self.labels),tf.float32))
@@ -71,7 +73,7 @@ class DiscSentence(object):
 
 
     def get_rewards(self,sess, x):
-        rewards = sess.run(self.pred_train_output,
+        rewards = sess.run(self.pred_train_output_log,
                            feed_dict={self.enc_inp: x})
         #print('get rewards')
         return rewards
