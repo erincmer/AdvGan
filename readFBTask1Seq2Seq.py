@@ -618,16 +618,19 @@ def create_con( create_data,MAX_SEQUENCE_LENGTH,MAX_REP_SEQUENCE_LENGTH):
     return embedding_matrix, train_data,test_data, word_index
 
 
-def add_noise(sentence_true, sentence_gen, word_index, all_sentences, mode):
+def add_noise(history, sentence_true, sentence_gen, word_index, all_sentences, mode):
     """
     Args:
         all_sentences: token version of all sentences in dialogue
     """
      
     sentence_true_noise = np.zeros(sentence_true.shape) 
-    sentence_true_index = []
+    history_true = np.zeros(history.shape)
+    true_count = 0
+    
     sentence_gen_noise = np.zeros(sentence_gen.shape)
-    sentence_gen_index = []
+    history_gen = np.zeros(history.shape)
+    gen_count = 0
     
     if mode == 1:
         # Choose randomly another sentence in the dataset instead of
@@ -639,40 +642,36 @@ def add_noise(sentence_true, sentence_gen, word_index, all_sentences, mode):
             #print(cansAns[1])
 
 
-            is_equal = np.sum(all_sentences[cansAns[0],:] == sentence_true[i,:])!=np.prod(all_sentences[cansAns[0],:].shape)
+            not_equal = np.sum(all_sentences[cansAns[0],:] == sentence_true[i,:])!=np.prod(all_sentences[cansAns[0],:].shape)
             #print(all_sentences[cansAns[0],:])
             #print(all_sentences[cansAns[0],:].shape)
             #print(sentence_true[i,:])
             #print(sentence_true[i,:].shape) 
             #print(sentence_true_noise[i,:].shape)
-            if is_equal:
-                sentence_true_noise[i,:] = all_sentences[cansAns[0],:]
-                sentence_true_index.append(i)
+            if not_equal:
+                sentence_true_noise[true_count,:] = all_sentences[cansAns[0],:]
+                history_true[true_count,:] = history[true_count,:]
+                true_count +=1
              
             is_equal = np.sum(all_sentences[cansAns[1],:] == sentence_gen[i,:])!=np.prod(all_sentences[cansAns[1],:].shape)
 
             if is_equal:
-                sentence_gen_noise[i,:] = all_sentences[cansAns[1],:]
-                sentence_gen_index.append(i)
+                sentence_gen_noise[gen_count,:] = all_sentences[cansAns[1],:]
+                history_gen[gen_count, :] = history[gen_count,:]
+                gen_count +=1
         
-        sentence_true_index = np.array(sentence_true_index)
-        sentence_gen_index = np.array(sentence_gen_index)
+        history_true = history_true[0:true_count+1,:]
+        history_gen = history_gen[0:gen_count+1,:]
+        sentence_true_noise = sentence_true_noise[0:true_count+1,:]
+        sentence_gen_noise = sentence_gen_noise[0:gen_count+1,:]
         
-        return (sentence_true_noise, 
-                sentence_true_index, 
-                sentence_gen_noise, 
-                sentence_gen_index)
+        return (history_true,
+                sentence_true_noise,
+                history_gen,
+                sentence_gen_noise)
 
     else:
         print('Unknown word noise mode')
-
-        sentence_true_index = np.arange(sentence_true.shape[0])
-        sentence_gen_index = np.arange(sentence_gen.shape[0])
-
-        return (sentence_true, 
-                sentence_true_index, 
-                sentence_gen,
-                sentence_gen_index)
 
 
 
