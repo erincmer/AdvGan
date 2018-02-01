@@ -670,6 +670,29 @@ def add_noise(history, sentence_true, sentence_gen, word_index, all_sentences, m
                 history_gen,
                 sentence_gen_noise)
 
+    elif mode ==2:
+        sen_length = sentence_true.shape[1]
+        for i in range(sentence_true.shape[0]):
+            # sample random length
+            length = np.random.randint(1, sen_length)
+            # sample $length random words
+            ranWords = np.random.choice(len(word_index), length,replace=False)
+            # Pad it with eos
+            replace_true = np.ones(sen_length) * word_index.get("eos")
+            replace_true[:length] = ranWords
+
+            not_equal = np.sum(replace_true== sentence_true[i,:])!=np.prod(sentence_true[i,:].shape)
+            if not_equal:
+                sentence_true_noise[true_count,:] = replace_true
+                history_true[true_count,:] = history[true_count,:]
+                true_count +=1
+            
+        history_true = history_true[0:true_count+1,:]
+        sentence_true_noise = sentence_true_noise[0:true_count+1,:]
+
+        return (history_true,
+                sentence_true_noise)
+
     else:
         print('Unknown word noise mode')
 

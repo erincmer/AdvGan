@@ -274,7 +274,7 @@ def trainS1(gen1,disc1,base1,hist_s1,reply_s1,d_steps = 2,g_steps = 1,lr=0.00000
     return
 
 
-def trainS2(gen2,disc2,base2,hist_s2,reply_s2,d_steps = 1,g_steps = 1,lr =0.00001):
+def trainS2(gen2,disc2,base2,hist_s2,reply_s2, all_sentences, d_steps = 1,g_steps = 1,lr =0.00001):
 
 
 
@@ -287,73 +287,147 @@ def trainS2(gen2,disc2,base2,hist_s2,reply_s2,d_steps = 1,g_steps = 1,lr =0.0000
     wrongCount3 = []
     idxTrain = np.arange(len(hist_s2))
     teacher_forcing = True
-    for ep in range(10):
+    for ep in range(d_steps):
         for j in range(0, hist_s2.shape[0] // headerSeq2Seq.BATCH_SIZE):
 
-                #     jAns = np.random.choice((hist_train.shape[0] // headerSeq2Seq.BATCH_SIZE)-1, 20, replace=False)
-                #     for j in jAns:
-                X = hist_s2[idxTrain[j * headerSeq2Seq.BATCH_SIZE:(j + 1) * headerSeq2Seq.BATCH_SIZE], :]
-                Y_train = reply_s2[idxTrain[j * headerSeq2Seq.BATCH_SIZE:(j + 1) * headerSeq2Seq.BATCH_SIZE], :]
+            #     jAns = np.random.choice((hist_train.shape[0] // headerSeq2Seq.BATCH_SIZE)-1, 20, replace=False)
+            #     for j in jAns:
+            X = hist_s2[idxTrain[j * headerSeq2Seq.BATCH_SIZE:(j + 1) * headerSeq2Seq.BATCH_SIZE], :]
+            Y_train = reply_s2[idxTrain[j * headerSeq2Seq.BATCH_SIZE:(j + 1) * headerSeq2Seq.BATCH_SIZE], :]
 
-                # Generate sentence
-                if not teacher_forcing:
-                    Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH)) * word_index['eos']
-                    teacher_forcing = True
-                    _, sentence = gen2.generate(sess, X, Y)
-                else:
-                    # Teacher forcing
-                    # Y = Y_train
-                    Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH)) * word_index['eos']
-                    teacher_forcing = False
-                    _, sentence = gen2.test_generate(sess, X, Y)
+            # Generate sentence
+            if not teacher_forcing:
+                Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH)) * word_index['eos']
+                teacher_forcing = True
+                _, sentence = gen2.generate(sess, X, Y)
+            else:
+                # Teacher forcing
+                # Y = Y_train
+                Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH)) * word_index['eos']
+                teacher_forcing = False
+                _, sentence = gen2.test_generate(sess, X, Y)
 
-                # Pad sentence of variable length to header.REP_SEQ_LENGTH
-                # rep_inp = np.full((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH), word_index['eos'])
-                # rep_inp[:, :sentence.shape[1]] = sentence
-                # sentence = rep_inp
-                # sentence[sentence == 0] = word_index['eos']
+            # Pad sentence of variable length to header.REP_SEQ_LENGTH
+            # rep_inp = np.full((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH), word_index['eos'])
+            # rep_inp[:, :sentence.shape[1]] = sentence
+            # sentence = rep_inp
+            # sentence[sentence == 0] = word_index['eos']
 
-                # Build a batch of half true and half false sentences
-                Y_d = np.zeros((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH))
-                sentence_index = np.random.random_integers((headerSeq2Seq.BATCH_SIZE - 1),
-                                                           size=(int(headerSeq2Seq.BATCH_SIZE / 2), 1))
-                # print("sentence indexes")
-                # print(sentence_index)
+            # Build a batch of half true and half false sentences
+            Y_d = np.zeros((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH))
+            sentence_index = np.random.random_integers((headerSeq2Seq.BATCH_SIZE - 1),
+                                                       size=(int(headerSeq2Seq.BATCH_SIZE / 2), 1))
+            # print("sentence indexes")
+            # print(sentence_index)
+            print(all_sentences.shape)
+            (X_noise, Y_train_noise,  
+                    X_sen, sentence_noise) = readFBTask1Seq2Seq.add_noise(X, Y_train,
+                            sentence, 
+                            word_index, 
+                            all_sentences, 
+                            1)
 
-                Y_d[0:int(headerSeq2Seq.BATCH_SIZE / 2), :] = np.squeeze(Y_train[sentence_index, :])
-                Y_d[int(headerSeq2Seq.BATCH_SIZE / 2):, :] = np.squeeze(sentence[sentence_index, :])
-                # print("Ground Truth Replies")
-                # toolsSeq2Seq.convert_id_to_text(Y_d[0:int(headerSeq2Seq.BATCH_SIZE / 2)], word_index)
-                # print("Generator Replies")
-                # toolsSeq2Seq.convert_id_to_text(Y_d[int(headerSeq2Seq.BATCH_SIZE / 2):], word_index)
+            (X_noise, Y_train_noise) = readFBTask1Seq2Seq.add_noise(X, Y_train,
+                            sentence, 
+                            word_index, 
+                            all_sentences, 
+                            2)
 
-                X_d = np.copy(X)
-                X_d[0:int(headerSeq2Seq.BATCH_SIZE / 2), :] = np.squeeze(np.copy(X[sentence_index, :]))
-                X_d[int(headerSeq2Seq.BATCH_SIZE / 2):, :] = np.squeeze(np.copy(X[sentence_index, :]))
+            # Debug 
+            num_test = 3
+            for i in range(num_test):
+                toolsSeq2Seq.convert_sentence_to_text(X_noise[i,:], word_index)
+                toolsSeq2Seq.convert_sentence_to_text(Y_train_noise[i,:], word_index)
+                #toolsSeq2Seq.convert_sentence_to_text(X_sen[i,:], word_index)
+                #toolsSeq2Seq.convert_sentence_to_text(sentence_noise[i,:], word_index)
+            exit(0)
+            
+            Y_d[0:int(headerSeq2Seq.BATCH_SIZE / 2), :] = np.squeeze(Y_train[sentence_index, :])
+            Y_d[int(headerSeq2Seq.BATCH_SIZE / 2):, :] = np.squeeze(sentence[sentence_index, :])
+            # print("Ground Truth Replies")
+            # toolsSeq2Seq.convert_id_to_text(Y_d[0:int(headerSeq2Seq.BATCH_SIZE / 2)], word_index)
+            # print("Generator Replies")
+            # toolsSeq2Seq.convert_id_to_text(Y_d[int(headerSeq2Seq.BATCH_SIZE / 2):], word_index)
+
+            X_d = np.copy(X)
+            X_d[0:int(headerSeq2Seq.BATCH_SIZE / 2), :] = np.squeeze(np.copy(X[sentence_index, :]))
+            X_d[int(headerSeq2Seq.BATCH_SIZE / 2):, :] = np.squeeze(np.copy(X[sentence_index, :]))
 
 
-                X_d = toolsSeq2Seq.concat_hist_reply(X_d, Y_d, word_index)
-                # print("Ground Truth Concat")
-                # toolsSeq2Seq.convert_id_to_text(X_d[0:int(headerSeq2Seq.BATCH_SIZE / 2)], word_index)
-                # print("Generator Concat")
-                # toolsSeq2Seq.convert_id_to_text(X_d[int(headerSeq2Seq.BATCH_SIZE / 2):], word_index)
-                #
-                # input("wait")
+            X_d = toolsSeq2Seq.concat_hist_reply(X_d, Y_d, word_index)
+            # print("Ground Truth Concat")
+            # toolsSeq2Seq.convert_id_to_text(X_d[0:int(headerSeq2Seq.BATCH_SIZE / 2)], word_index)
+            # print("Generator Concat")
+            # toolsSeq2Seq.convert_id_to_text(X_d[int(headerSeq2Seq.BATCH_SIZE / 2):], word_index)
+            #
+            # input("wait")
 
-                label_d = np.ones(headerSeq2Seq.BATCH_SIZE)
-                label_d[int(headerSeq2Seq.BATCH_SIZE / 2):] = 0
-                # print("Labels for Real Dialogs")
-                # print(label_d[:int(headerSeq2Seq.BATCH_SIZE / 2)])
-                # print("Labels for Fake Dialogs")
-                # print(label_d[int(headerSeq2Seq.BATCH_SIZE / 2):])
-                # input("wait")
-                # print(np.sum(np.abs(X_d[0:int(headerSeq2Seq.BATCH_SIZE / 2), :] !=X_d[int(headerSeq2Seq.BATCH_SIZE / 2):, :])))
-                # toolsSeq2Seq.convert_id_to_text(X_d,word_index)
-                # toolsSeq2Seq.convert_id_to_text(X_d,word_index)
-                _, d_loss, d_acc, _ = disc2.train_step(sess, X_d, label_d)
-                if j % 50 == 0:
-                    print("Discriminator loss = ", d_loss, "Discriminator accuracy = ", d_acc)
-                    disc2.save_model(sess, savepathD_S2)
+            label_d = np.ones(headerSeq2Seq.BATCH_SIZE)
+            label_d[int(headerSeq2Seq.BATCH_SIZE / 2):] = 0
+            # print("Labels for Real Dialogs")
+            # print(label_d[:int(headerSeq2Seq.BATCH_SIZE / 2)])
+            # print("Labels for Fake Dialogs")
+            # print(label_d[int(headerSeq2Seq.BATCH_SIZE / 2):])
+            # input("wait")
+            # print(np.sum(np.abs(X_d[0:int(headerSeq2Seq.BATCH_SIZE / 2), :] !=X_d[int(headerSeq2Seq.BATCH_SIZE / 2):, :])))
+            # toolsSeq2Seq.convert_id_to_text(X_d,word_index)
+            # toolsSeq2Seq.convert_id_to_text(X_d,word_index)
+            _, d_loss, d_acc, _ = disc2.train_step(sess, X_d, label_d)
+            if j % 50 == 0:
+                print("Discriminator loss = ", d_loss, "Discriminator accuracy = ", d_acc)
+                disc2.save_model(sess, savepathD_S2)
+        
+        # 
+        disc_acc = 0
+        for ii in range(hist_s2.shape[0] // headerSeq2Seq.BATCH_SIZE):
+            X = hist_s2[ii * headerSeq2Seq.BATCH_SIZE:(ii + 1) * headerSeq2Seq.BATCH_SIZE, :]
+            Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH)) * word_index['eos']
+            Y_train = reply_s2[ii * headerSeq2Seq.BATCH_SIZE:(ii + 1) * headerSeq2Seq.BATCH_SIZE, :]
+
+            gen_proba_test, sentence_test = gen2.test_generate(sess, X, Y)
+
+
+            sentence_index = np.random.random_integers((headerSeq2Seq.BATCH_SIZE - 1),
+                                                       size=(int(headerSeq2Seq.BATCH_SIZE / 2), 1))
+
+            Y_d[0:int(headerSeq2Seq.BATCH_SIZE / 2), :] = np.squeeze(Y_train[sentence_index, :])
+            Y_d[int(headerSeq2Seq.BATCH_SIZE / 2):, :] = np.squeeze(sentence_test[sentence_index, :])
+            X_d = np.copy(X)
+            X_d[0:int(headerSeq2Seq.BATCH_SIZE / 2), :] = np.squeeze(np.copy(X[sentence_index, :]))
+            X_d[int(headerSeq2Seq.BATCH_SIZE / 2):, :] = np.squeeze(np.copy(X[sentence_index, :]))
+            X_d = toolsSeq2Seq.concat_hist_reply(X_d, Y_d, word_index)
+            label_d = np.ones(headerSeq2Seq.BATCH_SIZE)
+            label_d[int(headerSeq2Seq.BATCH_SIZE / 2):] = 0
+
+            X_d = toolsSeq2Seq.concat_hist_reply(X, sentence_test, word_index)
+            temp_loss, temp_acc = disc2.get_loss(sess, X_d, label_d)
+            rewards = disc2.get_rewards(sess, X_d)
+            disc_acc = disc_acc + temp_acc
+            
+            num_test = 3
+            for i in range(num_test):
+                toolsSeq2Seq.convert_sentence_to_text(X_d[i], word_index)
+                toolsSeq2Seq.convert_sentence_to_text(Y_d[i], word_index)
+                print("label: ", label_d[i])
+                print("rewards: ", rewards[i])
+
+            #X_d = toolsSeq2Seq.concat_hist_reply(X, sentence_test, word_index)
+            #label_d = np.zeros(headerSeq2Seq.BATCH_SIZE)
+            #temp_loss, temp_acc = disc2.get_loss(sess, X_d, label_d)
+            #disc_acc = disc_acc + temp_acc
+
+            #X_d = toolsSeq2Seq.concat_hist_reply(X, Y_train, word_index)
+            #label_d = np.ones(headerSeq2Seq.BATCH_SIZE)
+            #temp_loss, temp_acc = disc2.get_loss(sess, X_d, label_d)
+            #disc_acc = disc_acc + temp_acc
+
+        disc_acc = disc_acc / (2 * (hist_s2.shape[0] // headerSeq2Seq.BATCH_SIZE))
+        print("epoch: %d, acc: "%(ep) ,disc_acc)
+        discAcc.append(disc_acc)
+        
+    exit(0)
+
+
 
     for ep in range(100000000):
         # Train discriminator
@@ -706,7 +780,7 @@ savepathB_S2 = 'BaselineModel/S2/'
 # Load data
 (embedding_matrix,
 train_data,test_data,
- word_index) = readFBTask1Seq2Seq.create_con(False, headerSeq2Seq.MAX_SEQ_LENGTH,headerSeq2Seq.REP_SEQ_LENGTH)
+ word_index) = readFBTask1Seq2Seq.create_con(True, headerSeq2Seq.MAX_SEQ_LENGTH,headerSeq2Seq.REP_SEQ_LENGTH)
 
 
 create_folders()
@@ -723,7 +797,7 @@ gen1,disc1,base1,gen2,disc2,base2,disc3,base3 = create_networks(EMB_DIM,END_TOKE
 
 
 config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
+#config.gpu_options.allow_growth = True
 sess = tf.Session(config=config)
 sess.run(tf.global_variables_initializer())
 
@@ -796,10 +870,32 @@ test_hist_s2_OOV = test_data["hist_s2_OOV"]
 test_reply_s2 = test_data["reply_s2"]
 test_reply_s2_OOV = test_data["reply_s2_OOV"]
 
+all_sen_s1 = train_data["all_sen_s1"]
+all_sen_s2 = train_data["all_sen_s2"]
+
+#preTrainS2(gen2, hist_s2, reply_s2,1,True)
+#exit(0)
+
+#gen2.restore_model(sess,savepathG_S2_Seq2Seq)
+trainS2(gen2,disc2,base2,hist_s2,reply_s2,all_sen_s2, 1,20)
 
 
-gen2.restore_model(sess,savepathG_S2_Seq2Seq)
-# preTrainS2(gen2, hist_s2, reply_s2,10,True)
+
+
+
+#for e in range(10000):
+#
+#
+#    trainS2(gen2,disc2,base2,hist_s2,reply_s2,1,20)
+#    testS2_onTest(gen2,hist_s2,reply_s2,test_hist_s2,test_reply_s2,test_hist_s2_OOV,test_reply_s2_OOV)
+#    testS2(gen2,disc2,hist_s2)
+#
+#
+#
+#for e in range(100):
+#
+#    trainS1(gen1,disc1,base1,hist_s1,reply_s1,2,1,0.000001)
+#    testS1(gen1,disc1,hist_s1)
 
 testS2_onTest(gen2,hist_s2,reply_s2,test_hist_s2,test_reply_s2,test_hist_s2_OOV,test_reply_s2_OOV)
 
@@ -836,19 +932,19 @@ testS2_onTest(gen2,hist_s2,reply_s2,test_hist_s2,test_reply_s2,test_hist_s2_OOV,
 #
 
 
-for e in range(10000):
-
-
-    trainS2(gen2,disc2,base2,hist_s2,reply_s2,1,20)
-    testS2_onTest(gen2,hist_s2,reply_s2,test_hist_s2,test_reply_s2,test_hist_s2_OOV,test_reply_s2_OOV)
-    testS2(gen2,disc2,hist_s2)
-
-
-
-for e in range(100):
-
-    trainS1(gen1,disc1,base1,hist_s1,reply_s1,2,1,0.000001)
-    testS1(gen1,disc1,hist_s1)
+#for e in range(10000):
+#
+#
+#    trainS2(gen2,disc2,base2,hist_s2,reply_s2,1,20)
+#    testS2_onTest(gen2,hist_s2,reply_s2,test_hist_s2,test_reply_s2,test_hist_s2_OOV,test_reply_s2_OOV)
+#    testS2(gen2,disc2,hist_s2)
+#
+#
+#
+#for e in range(100):
+#
+#    trainS1(gen1,disc1,base1,hist_s1,reply_s1,2,1,0.000001)
+#    testS1(gen1,disc1,hist_s1)
 
 
 
