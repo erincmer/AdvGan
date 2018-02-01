@@ -425,6 +425,7 @@ def create_can():
 
     neg_can_s1 = [] # contains all sentence in dataset
     neg_can_s2 = []
+    neg_can_s2_no_apicall = []
 
     for xx in lines:
         x = xx.split(  "\t") # x:  ['1 hi', 'hello what can i help you with today\n']
@@ -448,9 +449,10 @@ def create_can():
             # ############### Second Agent##############
 
             if s2 not in neg_can_s2:
+                if s2.split()[0] != 'api_call':
+                    neg_can_s2_no_apicall.append(s2)
 
-
-                    neg_can_s2.append(s2)
+                neg_can_s2.append(s2)
 
             # ############### Second Agent##############
     f.close()
@@ -485,7 +487,7 @@ def create_can():
 
     # Remark: neg_can == all_text \{eoh, eos, start_dialog}
     print("number of candidates ", len(neg_can_s1),len(neg_can_s2))
-    return neg_can_s1,neg_can_s2,all_text
+    return neg_can_s1,neg_can_s2,all_text, neg_can_s2_no_apicall
 
 
 def create_con( create_data,MAX_SEQUENCE_LENGTH,MAX_REP_SEQUENCE_LENGTH):
@@ -500,7 +502,7 @@ def create_con( create_data,MAX_SEQUENCE_LENGTH,MAX_REP_SEQUENCE_LENGTH):
     num_fake = 1
 
     if create_data:
-        neg_can_S1,neg_can_S2,all_text =  create_can() # Get all possible unique sentences
+        neg_can_S1,neg_can_S2,all_text, neg_can_S2_no_apicall =  create_can() # Get all possible unique sentences
         tokenizer =Tokenizer( )
         tokenizer.fit_on_texts(all_text)
         word_index = tokenizer.word_index # Dictionnary of token:index
@@ -547,6 +549,12 @@ def create_con( create_data,MAX_SEQUENCE_LENGTH,MAX_REP_SEQUENCE_LENGTH):
 
         train_data["all_sen_s2"] = pad_sequences(
                 tokenizer.texts_to_sequences(neg_can_S2), 
+                maxlen=MAX_REP_SEQUENCE_LENGTH,
+                padding='post', 
+                value=word_index["eos"])
+
+        train_data["all_sen_s2_no_apicall"] = pad_sequences(
+                tokenizer.texts_to_sequences(neg_can_S2_no_apicall), 
                 maxlen=MAX_REP_SEQUENCE_LENGTH,
                 padding='post', 
                 value=word_index["eos"])
@@ -618,7 +626,8 @@ def create_con( create_data,MAX_SEQUENCE_LENGTH,MAX_REP_SEQUENCE_LENGTH):
     return embedding_matrix, train_data,test_data, word_index
 
 
-def add_noise(history, sentence_true, sentence_gen, word_index, all_sentences, mode):
+def add_noise(history, sentence_true, sentence_gen, word_index, all_sentences,
+        all_sentences_no_apicall):
     """
     Args:
         all_sentences: token version of all sentences in dialogue
@@ -648,8 +657,28 @@ def add_noise(history, sentence_true, sentence_gen, word_index, all_sentences, m
         if not_equal_true and not_equal_gen:
             sen_noise.append(all_sentences[cansAns[0],:])
             history_noise.append(history[i,:])
-         
     
+    # NO api call version
+    # Choose randomly another sentence in the dataset instead of
+    # the ground truth one
+    for i in range(1,sentence_true.shape[0]):
+        cansAns = np.random.choice(len(all_sentences_no_apicall), 1, replace=False)
+        #print(cansAns.shape)
+        #print(cansAns[0])
+        #print(cansAns[1])
+
+        not_equal_true = np.sum(all_sentences_no_apicall[cansAns[0],:] == sentence_true[i,:])!=np.prod(all_sentences_no_apicall[cansAns[0],:].shape)
+        not_equal_gen = np.sum(all_sentences_no_apicall[cansAns[0],:] == sentence_gen[i,:])!=np.prod(all_sentences_no_apicall[cansAns[0],:].shape)
+
+        #print(all_sentences[cansAns[0],:])
+        #print(all_sentences[cansAns[0],:].shape)
+        #print(sentence_true[i,:])
+        #print(sentence_true[i,:].shape) 
+        #print(sentence_true_noise[i,:].shape)
+        if not_equal_true and not_equal_gen:
+            sen_noise.append(all_sentences_no_apicall[cansAns[0],:])
+            history_noise.append(history[i,:])
+   
     # random sentence of random length
     sen_length = sentence_true.shape[1]
     for i in range(sentence_true.shape[0]):
