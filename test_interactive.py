@@ -374,9 +374,6 @@ def trainS2(gen2,disc2,base2,hist_s2,reply_s2,d_steps = 2,g_steps = 1,lr =0.0000
 def trainS3():
     return
 
-def end_of_dialogue(sentence):
-    return False
-
 def inter_reinforce_train(gen1, disc1, base1, gen2, disc2, base2, 
         hist1_train, reply1_train, hist2_train, reply2_train, dial_train, d_steps = 2, g_steps = 1, lr =0.000001):
     
@@ -409,6 +406,7 @@ def inter_reinforce_train(gen1, disc1, base1, gen2, disc2, base2,
                         headerSeq2Seq.MAX_SEQ_LENGTH]) * word_index['eoh']
             Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH)) * word_index['eos']
             
+            over_lines = np.zeros(headerSeq2Seq.BATCH_SIZE)
             num_round = 0
             while True:
                 print("num_round: ", num_round)
@@ -813,13 +811,12 @@ test_reply_s2_OOV = test_data["reply_s2_OOV"]
 # TODO Create full real dialogues
 dial_train = hist_s1
 
+preTrainS2(gen2,hist_s2,reply_s2,10)
+preTrainS2(gen1,hist_s1,reply_s1,10)
 
 inter_reinforce_train(gen1, disc1, base1, gen2, disc2, base2, 
         hist_s1, reply_s1, hist_s2, reply_s2, dial_train, d_steps = 2, g_steps = 1, lr =0.000001)
 exit(0)
-
-#preTrainS2(gen2,hist_s2,reply_s2,10)
-#preTrainS2(gen1,hist_s1,reply_s1,10)
 
 
 for e in range(100):
