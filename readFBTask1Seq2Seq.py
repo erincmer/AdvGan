@@ -539,7 +539,17 @@ def create_con( create_data,MAX_SEQUENCE_LENGTH,MAX_REP_SEQUENCE_LENGTH):
         test_data["reply_s2"] = pad_sequences(tokenizer.texts_to_sequences(test_reply_s2), maxlen=MAX_REP_SEQUENCE_LENGTH,padding='post', value=word_index["eos"])
         test_data["reply_s2_OOV"] = pad_sequences(tokenizer.texts_to_sequences(test_reply_s2_OOV), maxlen=MAX_REP_SEQUENCE_LENGTH,padding='post', value=word_index["eos"])
 
+        train_data["all_sen_s1"] = pad_sequences(
+                tokenizer.texts_to_sequences(neg_can_S1), 
+                maxlen=MAX_REP_SEQUENCE_LENGTH,
+                padding='post', 
+                value=word_index["eos"])
 
+        train_data["all_sen_s2"] = pad_sequences(
+                tokenizer.texts_to_sequences(neg_can_S2), 
+                maxlen=MAX_REP_SEQUENCE_LENGTH,
+                padding='post', 
+                value=word_index["eos"])
 
         print("s1 dialogues")
         print(hist_s1[0:4])
@@ -607,6 +617,62 @@ def create_con( create_data,MAX_SEQUENCE_LENGTH,MAX_REP_SEQUENCE_LENGTH):
     # label_train_dialog: is rest in Train true or not
     return embedding_matrix, train_data,test_data, word_index
 
+
+def add_noise(sentence_true, sentence_gen, word_index, all_sentences, mode):
+    """
+    Args:
+        all_sentences: token version of all sentences in dialogue
+    """
+     
+    sentence_true_noise = np.zeros(sentence_true.shape) 
+    sentence_true_index = []
+    sentence_gen_noise = np.zeros(sentence_gen.shape)
+    sentence_gen_index = []
+    
+    if mode == 1:
+        # Choose randomly another sentence in the dataset instead of
+        # the ground truth one
+        for i in range(sentence_true.shape[0]):
+            cansAns = np.random.choice(len(all_sentences), 2, replace=False)
+            #print(cansAns.shape)
+            #print(cansAns[0])
+            #print(cansAns[1])
+
+
+            is_equal = np.sum(all_sentences[cansAns[0],:] == sentence_true[i,:])!=np.prod(all_sentences[cansAns[0],:].shape)
+            #print(all_sentences[cansAns[0],:])
+            #print(all_sentences[cansAns[0],:].shape)
+            #print(sentence_true[i,:])
+            #print(sentence_true[i,:].shape) 
+            #print(sentence_true_noise[i,:].shape)
+            if is_equal:
+                sentence_true_noise[i,:] = all_sentences[cansAns[0],:]
+                sentence_true_index.append(i)
+             
+            is_equal = np.sum(all_sentences[cansAns[1],:] == sentence_gen[i,:])!=np.prod(all_sentences[cansAns[1],:].shape)
+
+            if is_equal:
+                sentence_gen_noise[i,:] = all_sentences[cansAns[1],:]
+                sentence_gen_index.append(i)
+        
+        sentence_true_index = np.array(sentence_true_index)
+        sentence_gen_index = np.array(sentence_gen_index)
+        
+        return (sentence_true_noise, 
+                sentence_true_index, 
+                sentence_gen_noise, 
+                sentence_gen_index)
+
+    else:
+        print('Unknown word noise mode')
+
+        sentence_true_index = np.arange(sentence_true.shape[0])
+        sentence_gen_index = np.arange(sentence_gen.shape[0])
+
+        return (sentence_true, 
+                sentence_true_index, 
+                sentence_gen,
+                sentence_gen_index)
 
 
 
