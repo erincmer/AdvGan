@@ -624,79 +624,56 @@ def add_noise(history, sentence_true, sentence_gen, word_index, all_sentences, m
         all_sentences: token version of all sentences in dialogue
     """
      
-    sentence_true_noise = np.zeros(sentence_true.shape) 
-    history_true = np.zeros(history.shape)
-    true_count = 0
+    history_noise = []
+    sen_noise = []
+    #sen_noise = sentence_gen[0,:]  
+    #history_noise = history[0,:]
+
+    # Choose randomly another sentence in the dataset instead of
+    # the ground truth one
+    for i in range(1,sentence_true.shape[0]):
+        cansAns = np.random.choice(len(all_sentences), 1, replace=False)
+        #print(cansAns.shape)
+        #print(cansAns[0])
+        #print(cansAns[1])
+
+        not_equal_true = np.sum(all_sentences[cansAns[0],:] == sentence_true[i,:])!=np.prod(all_sentences[cansAns[0],:].shape)
+        not_equal_gen = np.sum(all_sentences[cansAns[0],:] == sentence_gen[i,:])!=np.prod(all_sentences[cansAns[0],:].shape)
+
+        #print(all_sentences[cansAns[0],:])
+        #print(all_sentences[cansAns[0],:].shape)
+        #print(sentence_true[i,:])
+        #print(sentence_true[i,:].shape) 
+        #print(sentence_true_noise[i,:].shape)
+        if not_equal_true and not_equal_gen:
+            sen_noise.append(all_sentences[cansAns[0],:])
+            history_noise.append(history[i,:])
+         
     
-    sentence_gen_noise = np.zeros(sentence_gen.shape)
-    history_gen = np.zeros(history.shape)
-    gen_count = 0
-    
-    if mode == 1:
-        # Choose randomly another sentence in the dataset instead of
-        # the ground truth one
-        for i in range(sentence_true.shape[0]):
-            cansAns = np.random.choice(len(all_sentences), 2, replace=False)
-            #print(cansAns.shape)
-            #print(cansAns[0])
-            #print(cansAns[1])
-
-
-            not_equal = np.sum(all_sentences[cansAns[0],:] == sentence_true[i,:])!=np.prod(all_sentences[cansAns[0],:].shape)
-            #print(all_sentences[cansAns[0],:])
-            #print(all_sentences[cansAns[0],:].shape)
-            #print(sentence_true[i,:])
-            #print(sentence_true[i,:].shape) 
-            #print(sentence_true_noise[i,:].shape)
-            if not_equal:
-                sentence_true_noise[true_count,:] = all_sentences[cansAns[0],:]
-                history_true[true_count,:] = history[true_count,:]
-                true_count +=1
-             
-            is_equal = np.sum(all_sentences[cansAns[1],:] == sentence_gen[i,:])!=np.prod(all_sentences[cansAns[1],:].shape)
-
-            if is_equal:
-                sentence_gen_noise[gen_count,:] = all_sentences[cansAns[1],:]
-                history_gen[gen_count, :] = history[gen_count,:]
-                gen_count +=1
+    # random sentence of random length
+    sen_length = sentence_true.shape[1]
+    for i in range(sentence_true.shape[0]):
+        # sample random length
+        length = np.random.randint(1, sen_length)
+        # sample $length random words
+        ranWords = np.random.choice(len(word_index), length,replace=False)
+        # Pad it with eos
+        replace_true = np.ones(sen_length) * word_index.get("eos")
+        replace_true[:length] = ranWords
         
-        history_true = history_true[0:true_count+1,:]
-        history_gen = history_gen[0:gen_count+1,:]
-        sentence_true_noise = sentence_true_noise[0:true_count+1,:]
-        sentence_gen_noise = sentence_gen_noise[0:gen_count+1,:]
-        
-        return (history_true,
-                sentence_true_noise,
-                history_gen,
-                sentence_gen_noise)
+        not_equal_true = np.sum(replace_true == sentence_true[i,:])!=np.prod(replace_true.shape)
+        not_equal_gen = np.sum(replace_true == sentence_gen[i,:])!=np.prod(replace_true.shape)
+        if not_equal_true and not_equal_gen:
+            sen_noise.append(replace_true)
+            history_noise.append(history[i,:])
 
-    elif mode ==2:
-        sen_length = sentence_true.shape[1]
-        for i in range(sentence_true.shape[0]):
-            # sample random length
-            length = np.random.randint(1, sen_length)
-            # sample $length random words
-            ranWords = np.random.choice(len(word_index), length,replace=False)
-            # Pad it with eos
-            replace_true = np.ones(sen_length) * word_index.get("eos")
-            replace_true[:length] = ranWords
+    history_noise = np.array(history_noise)
+    sen_noise = np.array(sen_noise)
 
-            not_equal = np.sum(replace_true== sentence_true[i,:])!=np.prod(sentence_true[i,:].shape)
-            if not_equal:
-                sentence_true_noise[true_count,:] = replace_true
-                history_true[true_count,:] = history[true_count,:]
-                true_count +=1
-            
-        history_true = history_true[0:true_count+1,:]
-        sentence_true_noise = sentence_true_noise[0:true_count+1,:]
-
-        return (history_true,
-                sentence_true_noise)
-
-    else:
-        print('Unknown word noise mode')
-
-
+    print(history_noise.shape)
+    print(sen_noise.shape)
+    return (history_noise,
+            sen_noise)
 
 
 if __name__ == "__main__":
