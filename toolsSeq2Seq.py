@@ -39,7 +39,7 @@ def convert_sentence_to_text(ids,word_index):
 
     sen = ""
     for i in ids:
-        if i!=0  and i!= word_index["eos"] and i!=word_index['eoh']:
+        if i!=0  and i!= word_index["eos"]: # and i!=word_index['eoh']:
             sen = sen +" " +list(word_index.keys())[list(word_index.values()).index(i)]
     print(sen)
 
