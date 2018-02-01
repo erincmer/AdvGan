@@ -313,11 +313,12 @@ def create_test_dialogs():
 
 
             hist_s2.append(sen + " " + s1 + " eoh ")
-            reply_s2.append(s2 + " eou " + " eos ")
+            reply_s2.append(s2 + "  " + " eos ")
 
             sen = sen + " " + s1 + " " + s2
     f.close()
     f = open('dialog-bAbI-tasks/dialog-babi-task1-API-calls-tst-OOV.txt', encoding='utf-8', errors='ignore')
+    lines = f.readlines()
     for xx in lines:
         x = xx.split("\t")  # # x:  ['1 hi', 'hello what can i help you with today\n']
         if (len(x) > 1):
@@ -331,7 +332,7 @@ def create_test_dialogs():
 
 
             hist_s2_OOV.append(sen + " " + s1 + " eoh ")
-            reply_s2_OOV.append(s2 + " eou " + " eos ")
+            reply_s2_OOV.append(s2  + " eos ")
 
             sen = sen + " " + s1 + " " + s2
 
@@ -377,35 +378,35 @@ def create_dialogs():
 
             if counter <50:
                 lite_hist_s1.append(sen + " eoh ")
-                lite_reply_s1.append(s1 + " eou " + " eos ")
+                lite_reply_s1.append(s1  + " eos ")
 
                 lite_hist_s2.append(sen + " " + s1 + " eoh ")
-                lite_reply_s2.append(s2 + " eou " + " eos ")
+                lite_reply_s2.append(s2 + " eos ")
 
                 lite_hist_s3.append(sen + " eoh ")
-                lite_reply_s3.append(s1 + " eou " + s2 + " eou " + " eos ")
+                lite_reply_s3.append(s1 + "  " + s2 + " " + " eos ")
 
                 if prev_sen != "notSet" and prev_s2 != "notSet":
                     lite_hist_s3.append(prev_sen)
-                    lite_reply_s3.append(prev_s2 + " eou " + s1 + " eou " + " eos ")
+                    lite_reply_s3.append(prev_s2 + "  " + s1 + "  " + " eos ")
 
 
 
 
             hist_s1.append(sen + " eoh ")
-            reply_s1.append(s1 + " eou " + " eos ")
+            reply_s1.append(s1 + "  " + " eos ")
 
             hist_s2.append(sen + " " + s1 +  " eoh ")
-            reply_s2.append(s2 + " eou " + " eos ")
+            reply_s2.append(s2 + " " + " eos ")
 
             hist_s3.append(sen + " eoh ")
-            reply_s3.append(s1 + " eou " +s2 + " eou " + " eos ")
+            reply_s3.append(s1 + " " +s2 + " " + " eos ")
 
 
             if prev_sen != "notSet" and prev_s2 != "notSet":
 
                 hist_s3.append(prev_sen)
-                reply_s3.append(prev_s2 + " eou " + s1 + " eou " + " eos ")
+                reply_s3.append(prev_s2 + " " + s1 + " " + " eos ")
             prev_sen =  sen + " " + s1 + " eoh "
             prev_s2 = s2
             sen = sen + " " + s1 + " " + s2
@@ -478,7 +479,7 @@ def create_can():
     f.close()
     all_text.append(" start dialog ")
     all_text.append(" eoh ")
-    all_text.append(" eou ")
+
     all_text.append(" eos ")
 
 
