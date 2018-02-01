@@ -131,7 +131,7 @@ def create_networks(EMB_DIM,END_TOKEN,word_index):
            generator_s2,discriminator_s2,baseline_s2,discriminator_s3,baseline_s3
 
 
-def preTrainS1(gen1,hist_s1,reply_s1,genEp):
+def preTrainS1(gen1,hist_s1,reply_s1,genEp,saveS1):
 
     hist_train = hist_s1
     reply_train = reply_s1
@@ -155,13 +155,13 @@ def preTrainS1(gen1,hist_s1,reply_s1,genEp):
                 gen1.save_model(sess, savepathG_S1_Seq2Seq)
 
 
-def preTrainS2(gen2, hist_s2, reply_s2 ,genEp):
+def preTrainS2(gen2, hist_s2, reply_s2 ,genEp,saveS2):
     hist_train = hist_s2
     reply_train = reply_s2
 
     idxTrain = np.arange(len(hist_train))
 
-    g_loss = 0
+
     for ep in range(genEp):
         np.random.shuffle(idxTrain)
         for j in range(hist_train.shape[0] // headerSeq2Seq.BATCH_SIZE):
@@ -172,8 +172,8 @@ def preTrainS2(gen2, hist_s2, reply_s2 ,genEp):
 
             if j == 0:
                 print("Gen Train Loss = ", g_loss, ep)
-
-                gen2.save_model(sess, savepathG_S2_Seq2Seq)
+                if saveS2:
+                    gen2.save_model(sess, savepathG_S2_Seq2Seq)
 
 
 
@@ -182,7 +182,7 @@ def trainS1(gen1,disc1,base1,hist_s1,reply_s1,d_steps = 2,g_steps = 1,lr=0.00000
 
 
     idxTrain = np.arange(len(hist_s1))
-
+    teacher_forcing = False
     for ep in range(1):
         # Train discriminator
 
@@ -274,16 +274,22 @@ def trainS1(gen1,disc1,base1,hist_s1,reply_s1,d_steps = 2,g_steps = 1,lr=0.00000
     return
 
 
-def trainS2(gen2,disc2,base2,hist_s2,reply_s2,d_steps = 2,g_steps = 1,lr =0.000001):
+def trainS2(gen2,disc2,base2,hist_s2,reply_s2,d_steps = 1,g_steps = 1,lr =0.00001):
+
+
+
+
+
+    discAcc = []
+    genRew = []
+    wrongCount1 = []
+    wrongCount2 = []
+    wrongCount3 = []
     idxTrain = np.arange(len(hist_s2))
+    teacher_forcing = True
+    for ep in range(10):
+        for j in range(0, hist_s2.shape[0] // headerSeq2Seq.BATCH_SIZE):
 
-    for ep in range(1):
-        # Train discriminator
-
-        for d in range(d_steps):
-            print("D step for S2 ===", d)
-
-            for j in range(0, hist_s2.shape[0] // headerSeq2Seq.BATCH_SIZE):
                 #     jAns = np.random.choice((hist_train.shape[0] // headerSeq2Seq.BATCH_SIZE)-1, 20, replace=False)
                 #     for j in jAns:
                 X = hist_s2[idxTrain[j * headerSeq2Seq.BATCH_SIZE:(j + 1) * headerSeq2Seq.BATCH_SIZE], :]
@@ -311,58 +317,206 @@ def trainS2(gen2,disc2,base2,hist_s2,reply_s2,d_steps = 2,g_steps = 1,lr =0.0000
                 Y_d = np.zeros((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH))
                 sentence_index = np.random.random_integers((headerSeq2Seq.BATCH_SIZE - 1),
                                                            size=(int(headerSeq2Seq.BATCH_SIZE / 2), 1))
+                # print("sentence indexes")
+                # print(sentence_index)
 
                 Y_d[0:int(headerSeq2Seq.BATCH_SIZE / 2), :] = np.squeeze(Y_train[sentence_index, :])
                 Y_d[int(headerSeq2Seq.BATCH_SIZE / 2):, :] = np.squeeze(sentence[sentence_index, :])
+                # print("Ground Truth Replies")
+                # toolsSeq2Seq.convert_id_to_text(Y_d[0:int(headerSeq2Seq.BATCH_SIZE / 2)], word_index)
+                # print("Generator Replies")
+                # toolsSeq2Seq.convert_id_to_text(Y_d[int(headerSeq2Seq.BATCH_SIZE / 2):], word_index)
+
                 X_d = np.copy(X)
                 X_d[0:int(headerSeq2Seq.BATCH_SIZE / 2), :] = np.squeeze(np.copy(X[sentence_index, :]))
                 X_d[int(headerSeq2Seq.BATCH_SIZE / 2):, :] = np.squeeze(np.copy(X[sentence_index, :]))
 
+
                 X_d = toolsSeq2Seq.concat_hist_reply(X_d, Y_d, word_index)
+                # print("Ground Truth Concat")
+                # toolsSeq2Seq.convert_id_to_text(X_d[0:int(headerSeq2Seq.BATCH_SIZE / 2)], word_index)
+                # print("Generator Concat")
+                # toolsSeq2Seq.convert_id_to_text(X_d[int(headerSeq2Seq.BATCH_SIZE / 2):], word_index)
+                #
+                # input("wait")
+
                 label_d = np.ones(headerSeq2Seq.BATCH_SIZE)
                 label_d[int(headerSeq2Seq.BATCH_SIZE / 2):] = 0
-
+                # print("Labels for Real Dialogs")
+                # print(label_d[:int(headerSeq2Seq.BATCH_SIZE / 2)])
+                # print("Labels for Fake Dialogs")
+                # print(label_d[int(headerSeq2Seq.BATCH_SIZE / 2):])
+                # input("wait")
                 # print(np.sum(np.abs(X_d[0:int(headerSeq2Seq.BATCH_SIZE / 2), :] !=X_d[int(headerSeq2Seq.BATCH_SIZE / 2):, :])))
                 # toolsSeq2Seq.convert_id_to_text(X_d,word_index)
                 # toolsSeq2Seq.convert_id_to_text(X_d,word_index)
                 _, d_loss, d_acc, _ = disc2.train_step(sess, X_d, label_d)
                 if j % 50 == 0:
-                    print("Discriminator loss = ", d_loss,"Discriminator accuracy = ",d_acc)
+                    print("Discriminator loss = ", d_loss, "Discriminator accuracy = ", d_acc)
                     disc2.save_model(sess, savepathD_S2)
+
+    for ep in range(100000000):
+        # Train discriminator
+
+        disc_acc = 0
+        for ii in range(hist_s2.shape[0] // headerSeq2Seq.BATCH_SIZE):
+            X = hist_s2[ii * headerSeq2Seq.BATCH_SIZE:(ii + 1) * headerSeq2Seq.BATCH_SIZE, :]
+            Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH)) * word_index['eos']
+            Y_train = reply_s2[ii * headerSeq2Seq.BATCH_SIZE:(ii + 1) * headerSeq2Seq.BATCH_SIZE, :]
+
+            gen_proba_test, sentence_test = gen2.test_generate(sess, X, Y)
+
+            X_d = toolsSeq2Seq.concat_hist_reply(X, sentence_test, word_index)
+            label_d = np.zeros(headerSeq2Seq.BATCH_SIZE)
+            temp_loss, temp_acc = disc2.get_loss(sess, X_d, label_d)
+            disc_acc = disc_acc + temp_acc
+
+            X_d = toolsSeq2Seq.concat_hist_reply(X, Y_train, word_index)
+            label_d = np.ones(headerSeq2Seq.BATCH_SIZE)
+            temp_loss, temp_acc = disc2.get_loss(sess, X_d, label_d)
+            disc_acc = disc_acc + temp_acc
+
+        disc_acc = disc_acc / (2 * (hist_s2.shape[0] // headerSeq2Seq.BATCH_SIZE))
+        discAcc.append(disc_acc)
+
+        for d in range(d_steps):
+            np.random.shuffle(idxTrain)
+            print("D step for S2 ===", d)
+
+            j = np.random.randint((hist_s2.shape[0] // headerSeq2Seq.BATCH_SIZE))
+
+
+            X = hist_s2[idxTrain[j * headerSeq2Seq.BATCH_SIZE:(j + 1) * headerSeq2Seq.BATCH_SIZE], :]
+            Y_train = reply_s2[idxTrain[j * headerSeq2Seq.BATCH_SIZE:(j + 1) * headerSeq2Seq.BATCH_SIZE], :]
+
+
+
+            for _ in range(3):
+
+                    Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH)) * word_index['eos']
+                    _, sentence = gen2.generate(sess, X, Y)
+                    Y_d = np.zeros((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH))
+                    sentence_index = np.random.random_integers((headerSeq2Seq.BATCH_SIZE - 1),
+                                                               size=(int(headerSeq2Seq.BATCH_SIZE / 2), 1))
+
+                    Y_d[0:int(headerSeq2Seq.BATCH_SIZE / 2), :] = np.squeeze(Y_train[sentence_index, :])
+                    Y_d[int(headerSeq2Seq.BATCH_SIZE / 2):, :] = np.squeeze(sentence[sentence_index, :])
+                    X_d = np.copy(X)
+                    X_d[0:int(headerSeq2Seq.BATCH_SIZE / 2), :] = np.squeeze(np.copy(X[sentence_index, :]))
+                    X_d[int(headerSeq2Seq.BATCH_SIZE / 2):, :] = np.squeeze(np.copy(X[sentence_index, :]))
+
+                    X_d = toolsSeq2Seq.concat_hist_reply(X_d, Y_d, word_index)
+                    label_d = np.ones(headerSeq2Seq.BATCH_SIZE)
+                    label_d[int(headerSeq2Seq.BATCH_SIZE / 2):] = 0
+
+
+                    _, d_loss, d_acc, _ = disc2.train_step(sess, X_d, label_d)
+
+
+
+
+
+
+
+            print("Discriminator loss = ", d_loss,"Discriminator accuracy = ",d_acc)
+                        # disc2.save_model(sess, savepathD_S2)
+
+
+        disc_acc = 0
+        for ii in range(hist_s2.shape[0] // headerSeq2Seq.BATCH_SIZE):
+            X = hist_s2[ii * headerSeq2Seq.BATCH_SIZE:(ii + 1) * headerSeq2Seq.BATCH_SIZE, :]
+            Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH)) * word_index['eos']
+            Y_train = reply_s2[ii * headerSeq2Seq.BATCH_SIZE:(ii + 1) * headerSeq2Seq.BATCH_SIZE, :]
+
+            gen_proba_test, sentence_test = gen2.test_generate(sess, X, Y)
+
+            X_d = toolsSeq2Seq.concat_hist_reply(X, sentence_test, word_index)
+            label_d = np.zeros(headerSeq2Seq.BATCH_SIZE)
+            temp_loss,temp_acc = disc2.get_loss(sess, X_d,label_d)
+            disc_acc = disc_acc + temp_acc
+
+            X_d = toolsSeq2Seq.concat_hist_reply(X, Y_train, word_index)
+            label_d = np.ones(headerSeq2Seq.BATCH_SIZE)
+            temp_loss, temp_acc = disc2.get_loss(sess, X_d, label_d)
+            disc_acc = disc_acc + temp_acc
+
+        disc_acc  = disc_acc/  (2*(hist_s2.shape[0] // headerSeq2Seq.BATCH_SIZE))
+        discAcc.append(disc_acc)
+
+        gen_rew = 0
+        for ii in range(hist_s2.shape[0] // headerSeq2Seq.BATCH_SIZE):
+            X = hist_s2[ii * headerSeq2Seq.BATCH_SIZE:(ii + 1) * headerSeq2Seq.BATCH_SIZE, :]
+            Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH)) * word_index['eos']
+            gen_proba_test, sentence_test = gen2.test_generate(sess, X, Y)
+            X_d = toolsSeq2Seq.concat_hist_reply(X, sentence_test, word_index)
+            temp_rew = disc2.get_rewards(sess, X_d)
+            gen_rew = gen_rew + np.sum(temp_rew[:,1])
+
+        genRew.append(gen_rew)
+
+
+        w1,w2,w3 = testS2_onTest(gen2, hist_s2, reply_s2, test_hist_s2, test_reply_s2, test_hist_s2_OOV, test_reply_s2_OOV)
+        wrongCount1.append(w1)
+        wrongCount2.append(w2)
+        wrongCount3.append(w3)
         gen2.assign_lr(sess, lr)
         for g in range(g_steps):
+            np.random.shuffle(idxTrain)
             print("G step for S1 ==== ", g)
             # jAns = np.random.choice((hist_s1.shape[0] // headerSeq2Seq.BATCH_SIZE)-1, 10, replace=False)
 
-            for j in range(0, hist_s2.shape[0] // headerSeq2Seq.BATCH_SIZE):
+            j = np.random.randint((hist_s2.shape[0] // headerSeq2Seq.BATCH_SIZE))
+
+            X = hist_s2[idxTrain[j * headerSeq2Seq.BATCH_SIZE:(j + 1) * headerSeq2Seq.BATCH_SIZE], :]
+
+            testS2(gen2,disc2,hist_s2)
+            print(j)
+
+            Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH)) * word_index['eos']
 
 
-                X = hist_s2[idxTrain[j * headerSeq2Seq.BATCH_SIZE:(j + 1) * headerSeq2Seq.BATCH_SIZE], :]
-
-                # Y_train = reply_s2[idxTrain[j * headerSeq2Seq.BATCH_SIZE:(j + 1) * headerSeq2Seq.BATCH_SIZE], :]
-
-
-                Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH)) * word_index['eos']
-
-
-                gen_proba, sentence = gen2.generate(sess, X, Y)
-
-
-                # disc_in = toolsSeq2Seq.concat_hist_reply(X, sentence, word_index)
-                # disc_rewards = disc2.get_rewards(sess, disc_in)
-
-                rewards = gen2.MC_reward(sess, X, sentence, headerSeq2Seq.MC_NUM, disc1, word_index)
-                # b = np.tile(np.mean(np.array(rewards), axis=0), (headerSeq2Seq.BATCH_SIZE, 1))
+            gen_proba, sentence = gen2.generate(sess, X, Y)
 
 
 
-                base2.train(sess, X, sentence, word_index, rewards)
-                b = base2.get_baseline(sess, X, sentence, word_index,)
+            rewards = gen2.MC_reward(sess, X, sentence, headerSeq2Seq.MC_NUM, disc1, word_index)
+                    # b = np.tile(np.mean(np.array(rewards), axis=0), (headerSeq2Seq.BATCH_SIZE, 1))
+
+            base2.train(sess, X, sentence, word_index, rewards)
+            b = base2.get_baseline(sess, X, sentence, word_index,)
 
 
-                _, adv_loss = gen2.advtrain_step(sess, X, sentence, sentence, rewards, b)
-                base2.save_model(sess,'BaselineModel/S2/')
-                gen2.save_model(sess,'GeneratorModel/S2/Reinforce/')
+            _, adv_loss = gen2.advtrain_step(sess, X, sentence, sentence, rewards, b)
+            # base2.save_model(sess,'BaselineModel/S2/')
+            # gen2.save_model(sess,'GeneratorModel/S2/Reinforce/')
+
+
+        gen_rew = 0
+        for ii in range(hist_s2.shape[0] // headerSeq2Seq.BATCH_SIZE):
+            X = hist_s2[ii * headerSeq2Seq.BATCH_SIZE:(ii + 1) * headerSeq2Seq.BATCH_SIZE, :]
+            Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH)) * word_index['eos']
+            gen_proba_test, sentence_test = gen2.test_generate(sess, X, Y)
+            X_d = toolsSeq2Seq.concat_hist_reply(X, sentence_test, word_index)
+            temp_rew = disc2.get_rewards(sess, X_d)
+            gen_rew = gen_rew + np.sum(temp_rew[:,1])
+        genRew.append(gen_rew)
+
+        w1,w2,w3 = testS2_onTest(gen2, hist_s2, reply_s2, test_hist_s2, test_reply_s2, test_hist_s2_OOV, test_reply_s2_OOV)
+        wrongCount1.append(w1)
+        wrongCount2.append(w2)
+        wrongCount3.append(w3)
+        fig = plt.figure()
+        plt.subplot(3, 1, 1)
+        plt.plot(discAcc, '-b', label='Disc Acc')
+        plt.subplot(3, 1, 2)
+        plt.plot(genRew, '-b', label='Gen Rewards')
+        plt.subplot(3, 1, 3)
+        plt.plot(wrongCount1, '-g', label='Train')
+        plt.plot(wrongCount2, '-b', label='Test')
+        plt.plot(wrongCount3, '-r', label='TestOOV')
+        fig.savefig('5GenDisc.pdf')  # save the figure to file
+        plt.close(fig)  # close the figure
+
     return
 
 def trainS3():
@@ -401,11 +555,12 @@ def testS1(gen1,disc1,hist_s1):
 
 def testS2(gen2, disc2, hist_s2):
     reward_list = []
-
+    total_rew = 0
+    counter = 0
     for ii in range(hist_s2.shape[0] // headerSeq2Seq.BATCH_SIZE):
         X = hist_s2[ii * headerSeq2Seq.BATCH_SIZE:(ii + 1) * headerSeq2Seq.BATCH_SIZE, :]
         Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH)) * word_index['eos']
-        # Y_train = reply_s1[ii * headerSeq2Seq.BATCH_SIZE:(ii + 1) * headerSeq2Seq.BATCH_SIZE, :]
+        Y_train = reply_s2[ii * headerSeq2Seq.BATCH_SIZE:(ii + 1) * headerSeq2Seq.BATCH_SIZE, :]
 
         gen_proba_test, sentence_test = gen2.test_generate(sess, X, Y)
 
@@ -415,6 +570,21 @@ def testS2(gen2, disc2, hist_s2):
 
         total_rew = total_rew + np.sum(disc_proba[:, 1])
         reward_list.append(disc_proba[:, 1])
+        cc = -1
+        # print("/////////////////////")
+        for d_p in disc_proba[:,1]:
+                cc = cc +1
+            # if d_p>0.45:
+                if np.sum(sentence_test[cc] != Y_train[cc]) >0 and counter<3:
+                    temp_proba = gen_proba_test[cc]
+                    temp_av = temp_proba[np.arange(len(temp_proba)), Y_train[cc, :]]
+
+                    print("Predicted === ", ii,ii * headerSeq2Seq.BATCH_SIZE + cc,
+                          toolsSeq2Seq.convert_return_id_to_text(sentence_test[cc],word_index)," Correct == ", toolsSeq2Seq.convert_return_id_to_text(Y_train[cc],word_index),
+                          " Reward ",d_p , " Probas of Correct Words = ", temp_av )
+
+
+                    counter = counter + 1
 
     reward_list = np.array(reward_list).flatten()
     print("Total Reward for S2 From Disc ===", total_rew, " Time == ", str(datetime.now().time()))
@@ -422,7 +592,7 @@ def testS2(gen2, disc2, hist_s2):
     plt.hist(reward_list, bins='auto')  # arguments are passed to np.histogram
     plt.title("Histogram S2 Rewards")
     f.savefig("Hist_S2.pdf", bbox_inches='tight')
-    f.close()
+    plt.close()
     return
 def testS2_onTest(gen2,hist_s2,reply_s2,test_hist_s2,test_reply_s2,test_hist_s2_OOV,test_reply_s2_OOV):
     total_correct = 0
@@ -442,7 +612,7 @@ def testS2_onTest(gen2,hist_s2,reply_s2,test_hist_s2,test_reply_s2,test_hist_s2_
             total_wrong = total_wrong + np.sum(sentence_test != Y_train)
 
     print("Correct Words for Train === ", total_correct," Wrong Words for Train ======== ", total_wrong, " Time == ", str(datetime.now().time()))
-
+    total_wrong1 = total_wrong
     total_correct = 0
     total_wrong = 0
     for ii in range(test_hist_s2.shape[0] // headerSeq2Seq.BATCH_SIZE):
@@ -458,14 +628,14 @@ def testS2_onTest(gen2,hist_s2,reply_s2,test_hist_s2,test_reply_s2,test_hist_s2_
 
     print("Correct Words for Test === ", total_correct, " Wrong Words for Test  ======== ", total_wrong, " Time == ",
           str(datetime.now().time()))
-
+    total_wrong2 = total_wrong
     total_correct = 0
     total_wrong = 0
     for ii in range(test_hist_s2_OOV.shape[0] // headerSeq2Seq.BATCH_SIZE):
-        X = test_reply_s2_OOV[ii * headerSeq2Seq.BATCH_SIZE:(ii + 1) * headerSeq2Seq.BATCH_SIZE, :]
+        X = test_hist_s2_OOV[ii * headerSeq2Seq.BATCH_SIZE:(ii + 1) * headerSeq2Seq.BATCH_SIZE, :]
 
         Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH)) * word_index['eos']
-        Y_train = reply_s2_OOV[ii * headerSeq2Seq.BATCH_SIZE:(ii + 1) * headerSeq2Seq.BATCH_SIZE, :]
+        Y_train = test_reply_s2_OOV[ii * headerSeq2Seq.BATCH_SIZE:(ii + 1) * headerSeq2Seq.BATCH_SIZE, :]
 
         gen_proba_test, sentence_test = gen2.test_generate(sess, X, Y)
 
@@ -476,7 +646,8 @@ def testS2_onTest(gen2,hist_s2,reply_s2,test_hist_s2,test_reply_s2,test_hist_s2_
 
     print("Correct Words for Test OOV === ", total_correct, " Wrong Words for Test OOV ======== ", total_wrong, " Time == ",
           str(datetime.now().time()))
-    return
+    total_wrong3 = total_wrong
+    return total_wrong1,total_wrong2,total_wrong3
 
 
 def testS3(gen1,gen2,disc1,disc2,hist_s3):
@@ -528,14 +699,14 @@ savepathG_S1_Seq2Seq = 'GeneratorModel/S1/Seq2Seq/'
 savepathG_S2_Seq2Seq = 'GeneratorModel/S2/Seq2Seq/'
 savepathD_S1 = 'DiscModel/S1/'
 savepathD_S2 = 'DiscModel/S2/'
-
-
+savepathG_S2_ReInf = 'GeneratorModel/S2/Reinforce/'
+savepathB_S2 = 'BaselineModel/S2/'
 
 
 # Load data
 (embedding_matrix,
 train_data,test_data,
- word_index) = readFBTask1Seq2Seq.create_con(True, headerSeq2Seq.MAX_SEQ_LENGTH,headerSeq2Seq.REP_SEQ_LENGTH)
+ word_index) = readFBTask1Seq2Seq.create_con(False, headerSeq2Seq.MAX_SEQ_LENGTH,headerSeq2Seq.REP_SEQ_LENGTH)
 
 
 create_folders()
@@ -627,16 +798,48 @@ test_reply_s2_OOV = test_data["reply_s2_OOV"]
 
 
 
+gen2.restore_model(sess,savepathG_S2_Seq2Seq)
+# preTrainS2(gen2, hist_s2, reply_s2,10,True)
+
+testS2_onTest(gen2,hist_s2,reply_s2,test_hist_s2,test_reply_s2,test_hist_s2_OOV,test_reply_s2_OOV)
+
+# for ii in range(hist_s2.shape[0] // headerSeq2Seq.BATCH_SIZE):
+#     X = hist_s2[ii * headerSeq2Seq.BATCH_SIZE:(ii + 1) * headerSeq2Seq.BATCH_SIZE, :]
+#     Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH)) * word_index['eos']
+#     Y_train = reply_s2[ii * headerSeq2Seq.BATCH_SIZE:(ii + 1) * headerSeq2Seq.BATCH_SIZE, :]
+#
+#     gen_proba_test, sentence_test = gen2.test_generate(sess, X, Y)
+#
+#     X_d = toolsSeq2Seq.concat_hist_reply(X, sentence_test, word_index)
+#
+#     for cc in range(headerSeq2Seq.BATCH_SIZE):
+#
+#         print("history")
+#         toolsSeq2Seq.convert_id_to_text(X[cc:cc+1],word_index)
+#         print("generator reply")
+#         toolsSeq2Seq.convert_id_to_text(sentence_test[cc:cc+1], word_index)
+#         print("ground truth")
+#         toolsSeq2Seq.convert_id_to_text(Y_train[cc:cc+1], word_index)
+#         print("concat history with reply ")
+#         toolsSeq2Seq.convert_id_to_text(X_d[cc:cc + 1],word_index)
+#
+
+# disc2.restore_model(sess,savepathD_S2)
+# base2.restore_model(sess,savepathB_S2)
+#
 
 
 
-preTrainS2(gen2,hist_s2,reply_s2,10)
-for e in range(100):
+# for ep in range(50):
+#     preTrainS2(gen2,hist_s2,reply_s2,2)
+#     testS2_onTest(gen2, hist_s2, reply_s2, test_hist_s2, test_reply_s2, test_hist_s2_OOV, test_reply_s2_OOV)
+#
 
-    testS2_onTest(gen2, hist_s2, reply_s2, test_hist_s2, test_reply_s2, test_hist_s2_OOV, test_reply_s2_OOV)
+
+for e in range(10000):
 
 
-    trainS2(gen2,disc2,base2,hist_s2,reply_s2,2,1,0.000001)
+    trainS2(gen2,disc2,base2,hist_s2,reply_s2,1,20)
     testS2_onTest(gen2,hist_s2,reply_s2,test_hist_s2,test_reply_s2,test_hist_s2_OOV,test_reply_s2_OOV)
     testS2(gen2,disc2,hist_s2)
 
