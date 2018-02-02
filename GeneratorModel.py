@@ -15,6 +15,7 @@ class Generator(object):
     def __init__(self, num_emb, batch_size, emb_dim, hidden_dim,
                  sequence_length, rep_sequence_length, start_token, end_token,gen_name,
                  learning_rate=0.00001, reward_gamma=1.00):
+        self.name = gen_name
         with tf.variable_scope(gen_name) as scope:
             self.num_emb = num_emb  # vocab size
             self.batch_size = batch_size
@@ -23,7 +24,6 @@ class Generator(object):
             self.sequence_length = sequence_length
             self.rep_sequence_length = rep_sequence_length
             self.end_token = end_token
-            self.name = gen_name
 
             self.start_tokens = tf.constant([start_token] * self.batch_size, dtype=tf.int32)
             self.end_tokens = tf.constant([end_token] * self.batch_size, dtype=tf.int32)
@@ -179,7 +179,8 @@ class Generator(object):
                         2),
                     1) # proba of the generated sentence
             
-            self.params = tf.trainable_variables()
+            self.params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,
+                    scope=self.name)
             self.saver = tf.train.Saver(var_list=self.params)
             self.gradients = tf.gradients(self.pretrain_loss, self.params)
             self.clipped_gradients, _ = tf.clip_by_global_norm(self.gradients, self.grad_clip)
@@ -508,7 +509,7 @@ class Generator(object):
         sess.run(self.lr_init, feed_dict={self.learning_rate_placeholer: x})
         return
     def pretrain_step(self, sess, x, y):
-        outputs = sess.run([self.pretrain_updates, self.pretrain_loss, self.pred_train_output],
+        outputs = sess.run([self.pretrain_updates, self.pretrain_loss, self.pred_train_output_ids],
                            feed_dict={self.enc_inp: x, self.labels: y})
         return outputs
     def get_pretrain_loss(self, sess, x, y):
