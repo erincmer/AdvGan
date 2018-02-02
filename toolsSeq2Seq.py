@@ -39,9 +39,10 @@ def convert_sentence_to_text(ids,word_index):
 
     sen = ""
     for i in ids:
-        if i!=0  and i!= word_index["eos"]: # and i!=word_index['eoh']:
+        if i!=0  and i!= word_index["eos"] and i!=word_index['eoh']:
             sen = sen +" " +list(word_index.keys())[list(word_index.values()).index(i)]
     print(sen)
+    return sen
 
 def convert_id_reward_to_text(ids,rewards,d_rewards,b,word_index):
 
@@ -82,6 +83,25 @@ def concat_hist_reply( histories, replies, word_index):
         counter = counter + 1
 
     return disc_inp
+
+def concat_hist_new( histories, replies, word_index):
+    disc_inp = np.full((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.MAX_SEQ_LENGTH), word_index['eos'])
+
+    counter = 0
+    for h, r in zip(histories, replies):
+        i = 0
+        while h[i] != word_index['eoh']:
+            disc_inp[counter, i] = h[i]
+            i = i + 1
+
+        #disc_inp[counter, i] = word_index['eoh']
+
+        disc_inp[counter, i + 1:i + 21] = r
+        disc_inp[counter, i + 21] = word_index['eoh']
+        counter = counter + 1
+
+    return disc_inp
+
 
 def EOD(sentence, over_lines, word_index, word_term="api_call"):
     """
@@ -169,4 +189,13 @@ def concat_hist_reply_over(histories, replies, word_index, over_lines):
         X[ind_concat[i], start_concat[i]:] = replies[ind_concat[i], :stop_replies[i]]
 
     return X
+
+def save_to_file(filename, ids,word_index):
+    f = open(filename, 'w+')
+    for id in ids:
+        sen = ""
+        for i in id:
+            if i!=0  and i!= word_index["eos"] and i!= word_index["eoh"]:
+                sen = sen +" " +list(word_index.keys())[list(word_index.values()).index(i)]
+        f.write(sen + '\n')
 
