@@ -281,6 +281,38 @@ import pickle
 #     f.close()
 #     return train_T,label_T
 #
+
+def create_test_s1_interactive():
+    """
+    Returns all the unique api_call of test set
+    """
+    f = open('dialog-bAbI-tasks/api_call_test.txt', encoding='utf-8', errors='ignore')
+    lines = f.readlines()
+
+    hist_s1 = []
+
+    counter = 0
+    for xx in lines:
+        #print("xx: ", xx)
+        x = xx.split("\t")  # # x:  ['1 hi', 'hello what can i help you with today\n']
+        #print("len(x): ", len(x))
+        if (len(x) == 1):
+            #print("x: ", x)
+            if x[0][0] == "1":
+                sen = " start dialog"
+
+            s1 = x[0][x[0].find(" "):].rstrip()  # sentence 1 'hi'
+            #print("s1: ", s1)
+            #print(len(s1))
+            #input("wait")
+            if len(s1) != 0:
+                hist_s1.append(sen + " " + s1 + " eoh ")
+
+    f.close()
+    #print("READ: ", hist_s1)
+    return  hist_s1
+
+
 def create_test_dialogs():
     """
     Returns all possible history finishing with customer sentence, sentences
@@ -338,6 +370,9 @@ def create_test_dialogs():
 
     f.close()
     return  hist_s2, reply_s2,hist_s2_OOV,reply_s2_OOV
+
+
+
 def create_dialogs():
     """
     Returns all possible history finishing with customer sentence, sentences
@@ -514,6 +549,8 @@ def create_con( create_data,MAX_SEQUENCE_LENGTH,MAX_REP_SEQUENCE_LENGTH):
         print("create_dialogs ...")
         hist_s1, reply_s1, hist_s2, reply_s2, hist_s3, reply_s3, lite_hist_s1, lite_reply_s1, lite_hist_s2, lite_reply_s2, lite_hist_s3, lite_reply_s3 = create_dialogs()
         test_hist_s2, test_reply_s2, test_hist_s2_OOV, test_reply_s2_OOV = create_test_dialogs()
+        
+        test_hist_s1 = create_test_s1_interactive()
 
         train_data = {}
         test_data = {}
@@ -541,6 +578,12 @@ def create_con( create_data,MAX_SEQUENCE_LENGTH,MAX_REP_SEQUENCE_LENGTH):
         test_data["reply_s2"] = pad_sequences(tokenizer.texts_to_sequences(test_reply_s2), maxlen=MAX_REP_SEQUENCE_LENGTH,padding='post', value=word_index["eos"])
         test_data["reply_s2_OOV"] = pad_sequences(tokenizer.texts_to_sequences(test_reply_s2_OOV), maxlen=MAX_REP_SEQUENCE_LENGTH,padding='post', value=word_index["eos"])
 
+        test_data["hist_s1"] = pad_sequences(
+                tokenizer.texts_to_sequences(test_hist_s1), 
+                maxlen=MAX_SEQUENCE_LENGTH,
+                padding='post', 
+                value=word_index["eos"])
+        
         train_data["all_sen_s1"] = pad_sequences(
                 tokenizer.texts_to_sequences(neg_can_S1), 
                 maxlen=MAX_REP_SEQUENCE_LENGTH,
@@ -558,6 +601,8 @@ def create_con( create_data,MAX_SEQUENCE_LENGTH,MAX_REP_SEQUENCE_LENGTH):
                 maxlen=MAX_REP_SEQUENCE_LENGTH,
                 padding='post', 
                 value=word_index["eos"])
+
+
 
         print("s1 dialogues")
         print(hist_s1[0:4])
@@ -642,18 +687,9 @@ def add_noise(history, sentence_true, sentence_gen, word_index, all_sentences,
     # the ground truth one
     for i in range(1,sentence_true.shape[0]):
         cansAns = np.random.choice(len(all_sentences), 1, replace=False)
-        #print(cansAns.shape)
-        #print(cansAns[0])
-        #print(cansAns[1])
-
         not_equal_true = np.sum(all_sentences[cansAns[0],:] == sentence_true[i,:])!=np.prod(all_sentences[cansAns[0],:].shape)
         not_equal_gen = np.sum(all_sentences[cansAns[0],:] == sentence_gen[i,:])!=np.prod(all_sentences[cansAns[0],:].shape)
 
-        #print(all_sentences[cansAns[0],:])
-        #print(all_sentences[cansAns[0],:].shape)
-        #print(sentence_true[i,:])
-        #print(sentence_true[i,:].shape) 
-        #print(sentence_true_noise[i,:].shape)
         if not_equal_true and not_equal_gen:
             sen_noise.append(all_sentences[cansAns[0],:])
             history_noise.append(history[i,:])
@@ -699,11 +735,10 @@ def add_noise(history, sentence_true, sentence_gen, word_index, all_sentences,
     history_noise = np.array(history_noise)
     sen_noise = np.array(sen_noise)
 
-    print(history_noise.shape)
-    print(sen_noise.shape)
     return (history_noise,
             sen_noise)
 
 
 if __name__ == "__main__":
     create_con(True, MAX_SEQUENCE_LENGTH=200, MAX_REP_SEQUENCE_LENGTH=20)
+    #create_test_s1_interactive()
