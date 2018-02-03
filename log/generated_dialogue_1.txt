@@ -1,0 +1,2177 @@
+
+
+ start dialog api call french london four cheap
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in a cheap price range with french cuisine for four people
+ i'm on it
+ i love french food
+ where should it be
+ with british food
+ ok let me look into some options for you
+ for four please
+ ok let me look into some options for you
+
+ start dialog api call spanish london four moderate
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish food for four people in a moderate price range in london
+ i'm on it
+ i love spanish food
+ ok let me look into some options for you
+ in bombay
+ ok let me look into some options for you
+ i will be four
+ ok let me look into some options for you
+
+ start dialog api call british madrid eight cheap
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation for eight people
+ i'm on it
+ with british food
+ any preference on a type of cuisine
+ in madrid
+ which price range are looking for
+ in madrid
+ ok let me look into some options for you
+
+ start dialog api call indian bombay four moderate
+ hello
+ hello what can i help you with today
+ can you book a table with indian food
+ i'm on it
+ with indian food
+ i'm on it
+ in bombay
+ how many people would be in your party
+ in bombay
+ how many people would be in your party
+
+ start dialog api call indian london four moderate
+ hi
+ hello what can i help you with today
+ can you book a table with indian cuisine
+ i'm on it
+ i love indian food
+ where should it be
+ i love british food
+ how many people would be in your party
+ for four people please
+ how how people would be in your party
+
+ start dialog api call spanish london two moderate
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish cuisine for two people
+ i'm on it
+ i love spanish food
+ where should it be
+ in london
+ how many people would be in your party
+ in london
+ ok let me look into some options for you
+
+ start dialog api call british london two expensive
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in a expensive price range with british cuisine for two people
+ i'm on it
+ with british food
+ where should it be
+ in london
+ ok let me look into some options for you
+ for two people please
+ ok let me look into some options for you
+
+ start dialog api call indian bombay two expensive
+ hi
+ hello what can i help you with today
+ can you book a table for two people with indian cuisine in a expensive price range
+ i'm on it
+ i love indian food
+ where should it be
+ i love indian food
+ ok let me look into some options for you
+ for two please
+ ok let me look into some options for you
+
+ start dialog api call spanish madrid four moderate
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish cuisine
+ i'm on it
+ i love love will food
+ where should it be
+ madrid please
+ how many people would be in your party
+ madrid please
+ how many people would be in your party
+
+ start dialog api call british bombay four moderate
+ hi
+ hello what can i help you with today
+ can you book a table
+ i'm on it
+ can you book a table with british food in bombay
+ any preference on a type of cuisine
+ with british cuisine
+ how many people would be in your party
+ with british food
+ how many people would be in your party
+
+ start dialog api call indian bombay two cheap
+ hello
+ hello what can i help you with today
+ can you book a table for two people with indian food
+ i'm on it
+ with indian food
+ where should it be
+ in bombay
+ which price range are looking for
+ in bombay
+ ok let me look into some options for you
+
+ start dialog api call indian madrid four moderate
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with indian cuisine for four people
+ i'm on it
+ i love indian food
+ where should it be
+ i love indian food
+ which price range are looking for
+ madrid please
+ ok let me look into some options for you
+
+ start dialog api call spanish paris two moderate
+ good morning
+ hello what can i help you with today
+ may i have a table in paris with spanish food
+ i'm on it
+ with spanish food
+ where should it be
+ paris please
+ how many people would be in your party
+ we will be two
+ which price range are looking for
+
+ start dialog api call indian london two moderate
+ hi
+ hello what can i help you with today
+ can you book a table in london for two in a moderate price range
+ i'm on it
+ can you book a table with indian cuisine
+ where should it be
+ with indian cuisine
+ ok let me look into some options for you
+ for two people please
+ ok let me look into some options for you
+
+ start dialog api call spanish london two cheap
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish food for two people
+ i'm on it
+ i love spanish food
+ where should it be
+ in london
+ how many people would be in your party
+ in london
+ ok let me look into some options for you
+
+ start dialog api call italian rome two moderate
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation in rome with italian cuisine for two
+ i'm on it
+ i love italian food
+ how many people would be in your party
+ in rome
+ ok let me look into some options for you
+ for two people please
+ ok let me look into some options for you
+
+ start dialog api call british rome eight expensive
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in a expensive price range
+ i'm on it
+ can you make a restaurant reservation in rome
+ i'm on it
+ with british food
+ i'm on it
+ with british food
+ ok let me look into some options for you
+
+ start dialog api call spanish london six moderate
+ hi
+ hello what can i help you with today
+ can you book a table in a moderate price range with spanish cuisine in london
+ i'm on it
+ with spanish cuisine
+ where should it be
+ in london
+ how many people would be in your party
+ for six please
+ ok let me look into some options for you
+
+ start dialog api call indian bombay six moderate
+ hi
+ hello what can i help you with today
+ can you book a table with indian cuisine in a moderate price range for six
+ i'm on it
+ with indian food
+ where should it be
+ in bombay
+ ok let me look into some options for you
+ in bombay
+ ok let me look into some options for you
+
+ start dialog api call british rome four moderate
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation for four with british food in a moderate price range
+ i'm on it
+ with british food
+ where should it be
+ in rome
+ ok let me look into some options for you
+ in rome
+ ok let me look into some options for you
+
+ start dialog api call spanish rome four moderate
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish cuisine
+ i'm on it
+ with spanish food
+ i'm on it
+ in rome
+ how many people would be in your party
+ in rome
+ how many people would be in your party
+
+ start dialog api call spanish bombay six expensive
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish cuisine in a expensive price range for six people
+ i'm on it
+ with spanish food
+ where should it be
+ bombay please
+ ok let me look into some options for you
+ bombay please
+ ok let me look into some options for you
+
+ start dialog api call italian london eight expensive
+ good morning
+ hello what can i help you with today
+ can you book a table in london in a expensive price range for eight people with italian cuisine in a
+ i'm on it
+ i love italian food
+ ok let me look into some options for you
+ in london
+ ok let me look into some options for you
+ for eight people please
+ ok let me look into some options for you
+
+ start dialog api call italian madrid two cheap
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation in madrid for two people with italian food
+ i'm on it
+ with italian food
+ how many people would be in your party
+ we will be two
+ ok let me look into some options for you
+ we will be two
+ ok let me look into some options for you
+
+ start dialog api call british rome four expensive
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with british cuisine
+ i'm on it
+ with british food
+ i'm on it
+ in rome
+ how many people would be in your party
+ in rome
+ how many people would be in your party
+
+ start dialog api call spanish bombay four moderate
+ hello
+ hello what can i help you with today
+ can you book a table with spanish cuisine in bombay
+ i'm on it
+ with spanish food
+ where should it be
+ bombay please
+ how many people would be in your party
+ bombay please
+ which price range are looking for
+
+ start dialog api call french bombay six cheap
+ hello
+ hello what can i help you with today
+ can you book a table for six people in bombay with british cuisine in a cheap price range
+ i'm on it
+ with french cuisine
+ ok let me look into some options for you
+ bombay please
+ ok let me look into some options for you
+ for four please
+ ok let me look into some options for you
+
+ start dialog api call indian london two expensive
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in london with indian cuisine in a expensive price range
+ i'm on it
+ i love indian food
+ how many people would be in your party
+ in london
+ which price range are looking for
+ for two people please
+ ok let me look into some options for you
+
+ start dialog api call french bombay six moderate
+ hi
+ hello what can i help you with today
+ can you book a table for six in bombay
+ i'm on it
+ can you book a table with french food in a moderate price range
+ ok let me look into some options for you
+ with french food
+ ok let me look into some options for you
+ with british food
+ ok let me look into some options for you
+
+ start dialog api call french london six moderate
+ hi
+ hello what can i help you with today
+ can you book a table for six in london
+ i'm on it
+ can you book a table for six in london
+ where should it be
+ with french cuisine
+ ok let me look into some options for you
+ for six please
+ ok let me look into some options for you
+
+ start dialog api call indian rome six expensive
+ hi
+ hello what can i help you with today
+ can you book a table with indian cuisine in a expensive price range for six people
+ i'm on it
+ with indian food
+ where should it be
+ in a expensive price range
+ ok let me look into some options for you
+ in a expensive price range please
+ ok let me look into some options for you
+
+ start dialog api call italian london four cheap
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation in london with italian cuisine
+ i'm on it
+ i love italian food
+ how many people would be in your party
+ in london
+ how many people would be in your party
+ for four people please
+ ok let me look into some options for you
+
+ start dialog api call indian london six expensive
+ hi
+ hello what can i help you with today
+ can you book a table in london for six people with indian cuisine in a expensive price range
+ i'm on it
+ i love indian food
+ ok let me look into some options for you
+ in london
+ ok let me look into some options for you
+ in a expensive price range please
+ ok let me look into some options for you
+
+ start dialog api call italian madrid four expensive
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation in madrid in a expensive price range for four people with italian food
+ i'm on it
+ with italian food
+ where should it be
+ in madrid
+ ok let me look into some options for you
+ for four people please
+ ok let me look into some options for you
+
+ start dialog api call french madrid four cheap
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in a cheap price range
+ i'm on it
+ i like to book a table in madrid with french food
+ i'm on it
+ with french food
+ where should it be
+ in madrid
+ ok let me look into some options for you
+
+ start dialog api call italian bombay four cheap
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation with italian food
+ i'm on it
+ i love italian food
+ where should it be
+ with british cuisine
+ how many people would be in your party
+ in bombay
+ how many people would be in your party
+
+ start dialog api call british rome eight cheap
+ good morning
+ hello what can i help you with today
+ may i have a table
+ i'm on it
+ can you make a restaurant reservation in rome
+ any preference on a type of cuisine
+ with british food
+ how many people would be in your party
+ with british food
+ which price range are looking for
+
+ start dialog api call spanish rome four expensive
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish cuisine
+ i'm on it
+ with spanish food
+ i'm on it
+ in rome
+ how many people would be in your party
+ in rome
+ how many people would be in your party
+
+ start dialog api call italian bombay two cheap
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation in bombay with italian cuisine
+ i'm on it
+ i love italian book
+ how many people would be in your party
+ bombay please
+ how many people would be in your party
+ for two people please
+ ok let me look into some options for you
+
+ start dialog api call spanish madrid four cheap
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish cuisine for four people in a cheap price range in madrid
+ i'm on it
+ i love spanish food
+ ok let me look into some options for you
+ madrid please
+ ok let me look into some options for you
+ i will be four
+ ok let me look into some options for you
+
+ start dialog api call french rome four cheap
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation in a cheap price range with french cuisine for four in rome
+ i'm on it
+ with french food
+ where should it be
+ with french food
+ ok let me look into some options for you
+ we will be four
+ ok let me look into some options for you
+
+ start dialog api call italian madrid eight cheap
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation with italian food for eight people
+ i'm on it
+ i love italian food
+ where should it be
+ in madrid
+ how many people would be in your party
+ for eight people please
+ ok let me look into some options for you
+
+ start dialog api call italian rome eight expensive
+ hello
+ hello what can i help you with today
+ may i have a table with italian cuisine in rome in a expensive price range
+ i'm on it
+ i love italian book a table
+ how many people would be in your party
+ with british food
+ which price range are looking for
+ for eight people please
+ ok let me look into some options for you
+
+ start dialog api call french rome four moderate
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation in a moderate price range in rome for four with french food
+ i'm on it
+ i like french food
+ ok let me look into some options for you
+ with french food
+ ok let me look into some options for you
+ i love british food
+ ok let me look into some options for you
+
+ start dialog api call indian london eight cheap
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in london for eight people in a cheap price range with indian food
+ i'm on it
+ with indian food
+ where should it be
+ in london
+ ok let me look into some options for you
+ for eight people please
+ ok let me look into some options for you
+
+ start dialog api call spanish madrid eight cheap
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish food for eight people in a cheap price range
+ i'm on it
+ i love spanish food
+ where should it be
+ in madrid
+ ok let me look into some options for you
+ madrid please
+ ok let me look into some options for you
+
+ start dialog api call british paris eight expensive
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation for eight people
+ i'm on it
+ i love british food
+ any preference on a type of cuisine
+ with british food
+ which price range are looking for
+ in paris
+ ok let me look into some options for you
+
+ start dialog api call french paris two cheap
+ good morning
+ hello what can i help you with today
+ may i have a table for two people in paris
+ i'm on it
+ i love french book
+ where should it be
+ i love french food
+ ok let me look into some options for you
+ in paris
+ ok let me look into some options for you
+
+ start dialog api call italian paris eight expensive
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation
+ i'm on it
+ can you make a restaurant reservation in paris
+ i'm on it
+ with italian food
+ where should it be
+ paris
+ which price range are looking for
+
+ start dialog api call spanish london four cheap
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish cuisine for four people in london
+ i'm on it
+ i love spanish food
+ how many people would be in your party
+ in bombay
+ ok let me look into some options for you
+ for four people please
+ ok let me look into some options for you
+
+ start dialog api call indian rome two moderate
+ hi
+ hello what can i help you with today
+ can you book a table in rome with indian cuisine in a moderate price range for two
+ i'm on it
+ i love indian food
+ which price range are looking for
+ in rome
+ ok let me look into some options for you
+ in a moderate price range please
+ ok let me look into some options for you
+
+ start dialog api call british bombay two cheap
+ hi
+ hello what can i help you with today
+ can you book a table for two people in a cheap price range in bombay
+ i'm on it
+ can you book a table with british cuisine in bombay for two people in a cheap price range
+ ok let me look into some options for you
+ with british food
+ ok let me look into some options for you
+ with british food
+ ok preference me look into some options for you
+
+ start dialog api call italian rome four expensive
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation with italian cuisine for four people in rome
+ i'm on it
+ with italian food
+ how many people would be in your party
+ in rome
+ ok let me look into some options for you
+ for four people please
+ ok let me look into some options for you
+
+ start dialog api call british london eight moderate
+ hi
+ hello what can i help you with today
+ can you book a table for eight people
+ i'm on it
+ can you book a table for eight people
+ any preference on a type of cuisine
+ with british food
+ any preference on a type of cuisine
+ with british food
+ ok let me look into some options for you
+
+ start dialog api call british bombay four expensive
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation for four people in bombay
+ i'm on it
+ with french british
+ any preference on a type of cuisine
+ bombay
+ ok let me look into some options for you
+ bombay please
+ ok let me look into some options for you
+
+ start dialog api call french paris eight moderate
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation in paris for eight people
+ i'm on it
+ i love french food
+ where should it be
+ with french cuisine
+ which price range are looking for
+ in paris
+ ok let me look into some options for you
+
+ start dialog api call italian bombay six cheap
+ hello
+ hello what can i help you with today
+ can you book a table for six people in a cheap price range in bombay
+ i'm on it
+ i love italian food
+ where should it be
+ with british cuisine
+ ok let me look into some options for you
+ in bombay
+ ok let me look into some options for you
+
+ start dialog api call british london four cheap
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with british food
+ i'm on it
+ can you book a table with british cuisine in a cheap price range
+ how many people would be in your party
+ in a cheap price range please
+ which price range are looking for
+ for four people please
+ ok let me look into some options for you
+
+ start dialog api call british paris eight moderate
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation for eight people
+ i'm on it
+ i love british food
+ any preference on a type of cuisine
+ with british food
+ which price range are looking for
+ with british food
+ ok let me look into some options for you
+
+ start dialog api call french madrid four moderate
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in a moderate price range
+ i'm on it
+ can you make a restaurant reservation with french cuisine in a moderate price range in madrid
+ i'm on it
+ with french cuisine
+ ok let me look into some options for you
+ in madrid
+ ok let me look into some options for you
+
+ start dialog api call spanish madrid two moderate
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation for two people
+ i'm on it
+ can you book a table with spanish cuisine for two people
+ any preference on a type of cuisine
+ i love spanish food
+ ok let me look into some options for you
+ i love be two
+ ok let me look into some options for you
+
+ start dialog api call british paris four moderate
+ hi
+ hello what can i help you with today
+ may i have a table for four in paris with british cuisine
+ i'm on it
+ i like to book a table with british food
+ which price range are looking for
+ i love british food
+ ok let me look into some options for you
+ in a moderate price range please
+ ok let me look into some options for you
+
+ start dialog api call british london two cheap
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in london for two people in a cheap price range
+ i'm on it
+ i love british food
+ where should it be
+ in london
+ ok let me look into some options for you
+ in london
+ ok let me look into some options for you
+
+ start dialog api call spanish bombay eight expensive
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish cuisine in bombay in a expensive price range
+ i'm on it
+ with spanish food
+ how many people would be in your party
+ bombay please
+ which price range are looking for
+ for eight people please
+ ok let me look into some options for you
+
+ start dialog api call french london two cheap
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in a cheap price range with french cuisine for four people
+ i'm on it
+ i love french food
+ where should it be
+ with british food
+ ok let me look into some options for you
+ for four please
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ may i have a table for two people with french food in a cheap price range
+ i'm on it
+ i love french food
+ where should it be
+ i love british food
+ ok let me look into some options for you
+ for two people please
+ ok let me look into some options for you
+
+ start dialog api call italian paris six expensive
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish food for four people in a moderate price range in london
+ i'm on it
+ i love spanish food
+ ok let me look into some options for you
+ in bombay
+ ok let me look into some options for you
+ i will be four
+ ok let me look into some options for you
+ hello
+ hello what can i help you with today
+ may i have a table for six in a expensive price range in paris
+ i'm on it
+ can you book a table with italian cuisine in a expensive price range
+ where should it be
+ i love italian food
+ ok preference me look into some options for you
+ for six people please
+ api call people would be in your party
+
+ start dialog api call italian paris six cheap
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation for eight people
+ i'm on it
+ with british food
+ any preference on a type of cuisine
+ in madrid
+ which price range are looking for
+ in madrid
+ ok let me look into some options for you
+ hello
+ hello what can i help you with today
+ may i have a table for six
+ i'm on it
+ can you make a restaurant reservation
+ any preference on a type of cuisine
+ i love italian food
+ any preference on a type of cuisine
+ i love italian food
+ ok let me look into some options for you
+
+ start dialog api call italian bombay eight moderate
+ hello
+ hello what can i help you with today
+ can you book a table with indian food
+ i'm on it
+ with indian food
+ i'm on it
+ in bombay
+ how many people would be in your party
+ in bombay
+ how many people would be in your party
+ hello
+ hello what can i help you with today
+ may i have a table in a moderate price range with italian cuisine for eight people in bombay
+ i'm on it
+ with italian cuisine
+ where should it be
+ with british cuisine
+ ok let me look into some options for you
+ for eight people please
+ ok let me look into some options for you
+
+ start dialog api call british madrid six cheap
+ hi
+ hello what can i help you with today
+ can you book a table with indian cuisine
+ i'm on it
+ i love indian food
+ where should it be
+ i love british food
+ how many people would be in your party
+ for four people please
+ how how people would be in your party
+ hi
+ hello what can i help you with today
+ may i have a table in madrid in a cheap price range for six with british food
+ i'm on it
+ with british food
+ where should it be
+ in madrid
+ ok let me look into some options for you
+ we will be six
+ ok let me look into some options for you
+
+ start dialog api call italian paris six moderate
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish cuisine for two people
+ i'm on it
+ i love spanish food
+ where should it be
+ in london
+ how many people would be in your party
+ in london
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ may i have a table for six
+ i'm on it
+ can you make a restaurant reservation
+ any preference on a type of cuisine
+ i love italian food
+ where should it be
+ i love italian food
+ ok let me look into some options for you
+
+ start dialog api call french madrid eight expensive
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in a expensive price range with british cuisine for two people
+ i'm on it
+ with british food
+ where should it be
+ in london
+ ok let me look into some options for you
+ for two people please
+ ok let me look into some options for you
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation with italian cuisine for eight people
+ i'm on it
+ i love french food
+ where should it be
+ in madrid
+ how many people would be in your party
+ for eight people please
+ ok let me look into some options for you
+
+ start dialog api call french rome four expensive
+ hi
+ hello what can i help you with today
+ can you book a table for two people with indian cuisine in a expensive price range
+ i'm on it
+ i love indian food
+ where should it be
+ i love indian food
+ ok let me look into some options for you
+ for two please
+ ok let me look into some options for you
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation with french food for four people in rome
+ i'm on it
+ with french cuisine
+ how many people would be in your party
+ in rome
+ ok let me look into some options for you
+ for four please
+ ok let me look into some options for you
+
+ start dialog api call spanish rome eight expensive
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish cuisine
+ i'm on it
+ i love love will food
+ where should it be
+ madrid please
+ how many people would be in your party
+ madrid please
+ how many people would be in your party
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation for eight people in a expensive price range
+ i'm on it
+ can you book a table
+ any preference on a type of cuisine
+ with spanish food
+ any preference on a type of cuisine
+ in rome
+ ok let me look into some options for you
+
+ start dialog api call spanish paris six cheap
+ hi
+ hello what can i help you with today
+ can you book a table
+ i'm on it
+ can you book a table with british food in bombay
+ any preference on a type of cuisine
+ with british cuisine
+ how many people would be in your party
+ with british food
+ how many people would be in your party
+ good morning
+ hello what can i help you with today
+ may i have a table
+ i'm on it
+ can you make a restaurant reservation
+ any preference on a type of cuisine
+ with spanish cuisine
+ where should it be
+ with spanish cuisine
+ how many people would be in your party
+
+ start dialog api call spanish bombay six moderate
+ hello
+ hello what can i help you with today
+ can you book a table for two people with indian food
+ i'm on it
+ with indian food
+ where should it be
+ in bombay
+ which price range are looking for
+ in bombay
+ ok let me look into some options for you
+ hello
+ hello what can i help you with today
+ can you book a table
+ i'm on it
+ can you book a table with spanish cuisine in a moderate price range for six in bombay
+ where should it be
+ with spanish food
+ which price range are looking for
+ bombay please
+ ok let me look into some options for you
+
+ start dialog api call italian rome four cheap
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with indian cuisine for four people
+ i'm on it
+ i love indian food
+ where should it be
+ i love indian food
+ which price range are looking for
+ madrid please
+ ok let me look into some options for you
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation with italian cuisine for four people in rome
+ i'm on it
+ with italian food
+ how many people would be in your party
+ in rome
+ ok let me look into some options for you
+ for four please
+ ok let me look into some options for you
+
+ start dialog api call spanish london eight moderate
+ good morning
+ hello what can i help you with today
+ may i have a table in paris with spanish food
+ i'm on it
+ with spanish food
+ where should it be
+ paris please
+ how many people would be in your party
+ we will be two
+ which price range are looking for
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation for eight people in london in a moderate price range with spanish food
+ i'm on it
+ with spanish food
+ where should it be
+ in london
+ ok let me look into some options for you
+ for eight please
+ ok let me look into some options for you
+
+ start dialog api call spanish madrid two expensive
+ hi
+ hello what can i help you with today
+ can you book a table in london for two in a moderate price range
+ i'm on it
+ can you book a table with indian cuisine
+ where should it be
+ with indian cuisine
+ ok let me look into some options for you
+ for two people please
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish food in a expensive price range in madrid
+ i'm on it
+ i love spanish food
+ how many people would be in your party
+ madrid please
+ which price range are looking for
+ we will be two
+ ok let me look into some options for you
+
+ start dialog api call french london four moderate
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish food for two people
+ i'm on it
+ i love spanish food
+ where should it be
+ in london
+ how many people would be in your party
+ in london
+ ok let me look into some options for you
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in a moderate price range with french cuisine for four people
+ i'm on it
+ with french cuisine
+ where should it be
+ silence
+ ok let me look into some options for you
+ in madrid
+ ok let me look into some options for you
+
+ start dialog api call indian paris four cheap
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation in rome with italian cuisine for two
+ i'm on it
+ i love italian food
+ how many people would be in your party
+ in rome
+ ok let me look into some options for you
+ for two people please
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ may i have a table in paris
+ i'm on it
+ may i have a table with indian cuisine in paris in a cheap price range
+ how many people would be in your party
+ i love british food
+ which price range are looking for
+ i love be food
+ ok let me look into some options for you
+
+ start dialog api call spanish paris eight cheap
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in a expensive price range
+ i'm on it
+ can you make a restaurant reservation in rome
+ i'm on it
+ with british food
+ i'm on it
+ with british food
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ may i have a table
+ i'm on it
+ may i have a table
+ any preference on a type of cuisine
+ with spanish food
+ where should it be
+ with spanish food
+ how many people would be in your party
+
+ start dialog api call italian rome six cheap
+ hi
+ hello what can i help you with today
+ can you book a table in a moderate price range with spanish cuisine in london
+ i'm on it
+ with spanish cuisine
+ where should it be
+ in london
+ how many people would be in your party
+ for six please
+ ok let me look into some options for you
+ hello
+ hello what can i help you with today
+ may i have a table
+ i'm on it
+ can you make a restaurant reservation with italian food for six people in rome in a cheap price range
+ how many people would be in your party
+ in a cheap price range please
+ ok let me look into some options for you
+ i am looking for a cheap restaurant
+ ok let me look into some options for you
+
+ start dialog api call british madrid eight moderate
+ hi
+ hello what can i help you with today
+ can you book a table with indian cuisine in a moderate price range for six
+ i'm on it
+ with indian food
+ where should it be
+ in bombay
+ ok let me look into some options for you
+ in bombay
+ ok let me look into some options for you
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation for eight people
+ i'm on it
+ i love italian food
+ any preference on a type of cuisine
+ with british food
+ which price range are looking for
+ in madrid
+ ok let me look into some options for you
+
+ start dialog api call french bombay six expensive
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation for four with british food in a moderate price range
+ i'm on it
+ with british food
+ where should it be
+ in rome
+ ok let me look into some options for you
+ in rome
+ ok let me look into some options for you
+ hello
+ hello what can i help you with today
+ can you book a table for six in bombay in a expensive price range
+ i'm on it
+ with french french a table with french food in a expensive price range
+ ok let me look into some options for you
+ with british food
+ ok let me look into some options for you
+ in bombay
+ ok let me look into some options for you
+
+ start dialog api call indian london six cheap
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish cuisine
+ i'm on it
+ with spanish food
+ i'm on it
+ in rome
+ how many people would be in your party
+ in rome
+ how many people would be in your party
+ hi
+ hello what can i help you with today
+ can you book a table in a cheap price range for six people with indian cuisine in london
+ i'm on it
+ i love indian food
+ ok let me look into some options for you
+ in london
+ ok let me look into some options for you
+ i am looking for a cheap restaurant
+ ok let me look into some options for you
+
+ start dialog api call italian london four moderate
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish cuisine in a expensive price range for six people
+ i'm on it
+ with spanish food
+ where should it be
+ bombay please
+ ok let me look into some options for you
+ bombay please
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ can you book a table with italian cuisine
+ i'm on it
+ can you book a table with italian cuisine
+ how many people would be in your party
+ i love british food
+ how many people would be in your party
+ for four people please
+ which price range are looking for
+
+ start dialog api call spanish rome four cheap
+ good morning
+ hello what can i help you with today
+ can you book a table in london in a expensive price range for eight people with italian cuisine in a
+ i'm on it
+ i love italian food
+ ok let me look into some options for you
+ in london
+ ok let me look into some options for you
+ for eight people please
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish cuisine
+ i'm on it
+ with spanish food
+ i'm on it
+ in rome
+ how many people would be in your party
+ in rome
+ how many people would be in your party
+
+ start dialog api call french madrid eight moderate
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation in madrid for two people with italian food
+ i'm on it
+ with italian food
+ how many people would be in your party
+ we will be two
+ ok let me look into some options for you
+ we will be two
+ ok let me look into some options for you
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in madrid for eight people in a moderate price range with french cuisine
+ i'm on it
+ i love french food
+ ok let me look into some options for you
+ in madrid
+ ok let me look into some options for you
+ in madrid
+ ok let me look into some options for you
+
+ start dialog api call italian bombay six moderate
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with british cuisine
+ i'm on it
+ with british food
+ i'm on it
+ in rome
+ how many people would be in your party
+ in rome
+ how many people would be in your party
+ hello
+ hello what can i help you with today
+ can you book a table with italian cuisine
+ i'm on it
+ i love italian food food
+ where should it be
+ with british food
+ how many people would be in your party
+ bombay please
+ how many people would be in your party
+
+ start dialog api call indian madrid four expensive
+ hello
+ hello what can i help you with today
+ can you book a table with spanish cuisine in bombay
+ i'm on it
+ with spanish food
+ where should it be
+ bombay please
+ how many people would be in your party
+ bombay please
+ which price range are looking for
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation in madrid in a expensive price range with indian cuisine for four people
+ i'm on it
+ i love indian food
+ ok let me look into some options for you
+ madrid please
+ ok let me look into some options for you
+ in madrid please
+ ok let me look into some options for you
+
+ start dialog api call french madrid six expensive
+ hello
+ hello what can i help you with today
+ can you book a table for six people in bombay with british cuisine in a cheap price range
+ i'm on it
+ with french cuisine
+ ok let me look into some options for you
+ bombay please
+ ok let me look into some options for you
+ for four please
+ ok let me look into some options for you
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation in a expensive price range with french food for six people in madrid
+ i'm on it
+ i love french food
+ ok let me look into some options for you
+ in madrid
+ ok let me look into some options for you
+ for six please
+ ok let me look into some options for you
+
+ start dialog api call british bombay six cheap
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in london with indian cuisine in a expensive price range
+ i'm on it
+ i love indian food
+ how many people would be in your party
+ in london
+ which price range are looking for
+ for two people please
+ ok let me look into some options for you
+ hello
+ hello what can i help you with today
+ can you book a table for six
+ i'm on it
+ can you book a table with british cuisine in bombay for six people in a cheap price range
+ ok let me look into some options for you
+ i love british food
+ ok let me look into some options for you
+ i love british food
+ ok let me look into some options for you
+
+ start dialog api call british madrid two moderate
+ hi
+ hello what can i help you with today
+ can you book a table for six in bombay
+ i'm on it
+ can you book a table with french food in a moderate price range
+ ok let me look into some options for you
+ with french food
+ ok let me look into some options for you
+ with british food
+ ok let me look into some options for you
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in madrid in a moderate price range
+ i'm on it
+ can you book a table with british cuisine for two people in a moderate price range in madrid
+ ok let me look into some options for you
+ i love british food
+ ok let me look into some options for you
+ i love british food
+ ok let me look into some options for you
+
+ start dialog api call italian paris two moderate
+ hi
+ hello what can i help you with today
+ can you book a table for six in london
+ i'm on it
+ can you book a table for six in london
+ where should it be
+ with french cuisine
+ ok let me look into some options for you
+ for six please
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ may i have a table for two in a moderate price range
+ i'm on it
+ i like to book a table
+ any preference on a type of cuisine
+ with italian cuisine
+ any preference on a type of cuisine
+ i love italian food
+ ok let me look into some options for you
+
+ start dialog api call spanish paris six expensive
+ hi
+ hello what can i help you with today
+ can you book a table with indian cuisine in a expensive price range for six people
+ i'm on it
+ with indian food
+ where should it be
+ in a expensive price range
+ ok let me look into some options for you
+ in a expensive price range please
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation
+ i'm on it
+ can you book a table in a expensive price range for six people
+ i'm on it
+ with spanish cuisine
+ where should it be
+ in a expensive price range
+ ok let me look into some options for you
+
+ start dialog api call spanish london two expensive
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation in london with italian cuisine
+ i'm on it
+ i love italian food
+ how many people would be in your party
+ in london
+ how many people would be in your party
+ for four people please
+ ok let me look into some options for you
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish food for two people
+ i'm on it
+ i love spanish food
+ where should it be
+ in london
+ how many people would be in your party
+ for two people please
+ ok let me look into some options for you
+
+ start dialog api call french london six expensive
+ hi
+ hello what can i help you with today
+ can you book a table in london for six people with indian cuisine in a expensive price range
+ i'm on it
+ i love indian food
+ ok let me look into some options for you
+ in london
+ ok let me look into some options for you
+ in a expensive price range please
+ ok let me look into some options for you
+ hi
+ hello what can i help you with today
+ can you book a table for six people in a expensive price range in london
+ i'm on it
+ can you book a table with french food in a expensive price range
+ where should it be
+ with french food
+ ok preference me look into some options for you
+ for six people please
+ api call people would be in your party
+
+ start dialog api call italian bombay eight cheap
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation in madrid in a expensive price range for four people with italian food
+ i'm on it
+ with italian food
+ where should it be
+ in madrid
+ ok let me look into some options for you
+ for four people please
+ ok let me look into some options for you
+ hello
+ hello what can i help you with today
+ may i have a table in bombay for eight people in a cheap price range for eight people with italian
+ i'm on it
+ with italian food
+ where should it be
+ in bombay
+ ok let me look into some options for you
+ for eight please
+ ok let me look into some options for you
+
+ start dialog api call british madrid four moderate
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in a cheap price range
+ i'm on it
+ i like to book a table in madrid with french food
+ i'm on it
+ with french food
+ where should it be
+ in madrid
+ ok let me look into some options for you
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in madrid in a moderate price range for four
+ i'm on it
+ can you make a restaurant reservation with british cuisine
+ where should it be
+ with british cuisine
+ ok let me look into some options for you
+ madrid please
+ ok let me look into some options for you
+
+ start dialog api call italian bombay four expensive
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation with italian food
+ i'm on it
+ i love italian food
+ where should it be
+ with british cuisine
+ how many people would be in your party
+ in bombay
+ how many people would be in your party
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation with italian food
+ i'm on it
+ i love italian food
+ where should it be
+ i love british food
+ how many people would be in your party
+ bombay please
+ how many people would be in your party
+
+ start dialog api call italian madrid two expensive
+ good morning
+ hello what can i help you with today
+ may i have a table
+ i'm on it
+ can you make a restaurant reservation in rome
+ any preference on a type of cuisine
+ with british food
+ how many people would be in your party
+ with british food
+ which price range are looking for
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation in madrid with italian cuisine for two in a expensive price range
+ i'm on it
+ i love italian food
+ ok let me look into some options for you
+ madrid please
+ ok let me look into some options for you
+ i love be food
+ ok let me look into some options for you
+
+ start dialog api call italian bombay four moderate
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish cuisine
+ i'm on it
+ with spanish food
+ i'm on it
+ in rome
+ how many people would be in your party
+ in rome
+ how many people would be in your party
+ hello
+ hello what can i help you with today
+ can you book a table with italian food
+ i'm on it
+ i love italian food
+ where should it be
+ with british cuisine
+ how many people would be in your party
+ bombay please
+ how many people would be in your party
+
+ start dialog api call british madrid six expensive
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation in bombay with italian cuisine
+ i'm on it
+ i love italian book
+ how many people would be in your party
+ bombay please
+ how many people would be in your party
+ for two people please
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ may i have a table in madrid for six people with british cuisine
+ i'm on it
+ i love british food
+ how many people would be in your party
+ madrid please
+ ok let me look into some options for you
+ we will be six
+ ok let me look into some options for you
+
+ start dialog api call british paris four expensive
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish cuisine for four people in a cheap price range in madrid
+ i'm on it
+ i love spanish food
+ ok let me look into some options for you
+ madrid please
+ ok let me look into some options for you
+ i will be four
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ may i have a table for four in paris with british cuisine
+ i'm on it
+ with british food
+ how many people would be in your party
+ in paris
+ ok let me look into some options for you
+ for four people please
+ ok let me look into some options for you
+
+ start dialog api call spanish london six expensive
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation in a cheap price range with french cuisine for four in rome
+ i'm on it
+ with french food
+ where should it be
+ with french food
+ ok let me look into some options for you
+ we will be four
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation for six people with indian cuisine in london in a expensive price range
+ i'm on it
+ in a expensive price range
+ ok let me look into some options for you
+ i love british food
+ ok let me look into some options for you
+ i love british food
+ ok let me look into some options for you
+
+ start dialog api call indian paris four expensive
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation with italian food for eight people
+ i'm on it
+ i love italian food
+ where should it be
+ in madrid
+ how many people would be in your party
+ for eight people please
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ can you book a table in paris with indian cuisine
+ i'm on it
+ with indian food
+ where should it be
+ in paris
+ how many people would be in your party
+ for four people please
+ which price range are looking for
+
+ start dialog api call french london six cheap
+ hello
+ hello what can i help you with today
+ may i have a table with italian cuisine in rome in a expensive price range
+ i'm on it
+ i love italian book a table
+ how many people would be in your party
+ with british food
+ which price range are looking for
+ for eight people please
+ ok let me look into some options for you
+ hello
+ hello what can i help you with today
+ may i have a table for six people with french cuisine in a cheap price range
+ i'm on it
+ i love italian food
+ where should it be
+ with french food
+ ok let me look into some options for you
+ we will be six
+ ok let me look into some options for you
+
+ start dialog api call french bombay eight moderate
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation in a moderate price range in rome for four with french food
+ i'm on it
+ i like french food
+ ok let me look into some options for you
+ with french food
+ ok let me look into some options for you
+ i love british food
+ ok let me look into some options for you
+ hello
+ hello what can i help you with today
+ may i have a table for eight people in bombay
+ i'm on it
+ with french french food
+ where should it be
+ with french cuisine
+ ok let me look into some options for you
+ for eight please
+ ok let me look into some options for you
+
+ start dialog api call spanish rome six cheap
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in london for eight people in a cheap price range with indian food
+ i'm on it
+ with indian food
+ where should it be
+ in london
+ ok let me look into some options for you
+ for eight people please
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation
+ i'm on it
+ can you make a restaurant reservation
+ any preference on a type of cuisine
+ with spanish food
+ where should it be
+ with spanish food
+ how many people would be in your party
+
+ start dialog api call indian bombay six cheap
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish food for eight people in a cheap price range
+ i'm on it
+ i love spanish food
+ where should it be
+ in madrid
+ ok let me look into some options for you
+ madrid please
+ ok let me look into some options for you
+ hello
+ hello what can i help you with today
+ can you book a table in a cheap price range for six people with indian cuisine in bombay
+ i'm on it
+ with indian cuisine
+ where should it be
+ in bombay
+ ok let me look into some options for you
+ in a cheap price range please
+ ok let me look into some options for you
+
+ start dialog api call indian rome six moderate
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation for eight people
+ i'm on it
+ i love british food
+ any preference on a type of cuisine
+ with british food
+ which price range are looking for
+ in paris
+ ok let me look into some options for you
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation
+ i'm on it
+ can you make a restaurant reservation in rome
+ i'm on it
+ with indian cuisine
+ where should it be
+ in a moderate price range
+ ok let me look into some options for you
+
+ start dialog api call british rome eight moderate
+ good morning
+ hello what can i help you with today
+ may i have a table for two people in paris
+ i'm on it
+ i love french book
+ where should it be
+ i love french food
+ ok let me look into some options for you
+ in paris
+ ok let me look into some options for you
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in rome for eight people in a moderate price range with british cuisine
+ i'm on it
+ i love french food
+ ok let me look into some options for you
+ with british food
+ ok let me look into some options for you
+ in a moderate price range please
+ ok let me look into some options for you
+
+ start dialog api call spanish london six cheap
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation
+ i'm on it
+ can you make a restaurant reservation in paris
+ i'm on it
+ with italian food
+ where should it be
+ paris
+ which price range are looking for
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation for six people with spanish cuisine in london in a cheap price range
+ i'm on it
+ i love british food
+ ok let me look into some options for you
+ in madrid
+ ok let me look into some options for you
+ in a cheap price range please
+ ok let me look into some options for you
+
+ start dialog api call indian madrid two expensive
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish cuisine for four people in london
+ i'm on it
+ i love spanish food
+ how many people would be in your party
+ in bombay
+ ok let me look into some options for you
+ for four people please
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation
+ i'm on it
+ can you book a table in madrid in a expensive price range
+ i'm on it
+ i love indian food
+ which price range are looking for
+ in madrid
+ ok let me look into some options for you
+
+ start dialog api call indian madrid six expensive
+ hi
+ hello what can i help you with today
+ can you book a table in rome with indian cuisine in a moderate price range for two
+ i'm on it
+ i love indian food
+ which price range are looking for
+ in rome
+ ok let me look into some options for you
+ in a moderate price range please
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation
+ i'm on it
+ can you make a restaurant reservation
+ any preference on a type of cuisine
+ with indian food
+ where should it be
+ with indian food
+ how many people would be in your party
+
+ start dialog api call british paris six moderate
+ hi
+ hello what can i help you with today
+ can you book a table for two people in a cheap price range in bombay
+ i'm on it
+ can you book a table with british cuisine in bombay for two people in a cheap price range
+ ok let me look into some options for you
+ with british food
+ ok let me look into some options for you
+ with british food
+ ok preference me look into some options for you
+ hi
+ hello what can i help you with today
+ may i have a table for six people in paris for six
+ i'm on it
+ can you make a restaurant reservation for six people with british cuisine in a moderate price range
+ any preference on a type of cuisine
+ i love british food
+ any preference on a type of cuisine
+ i love british food
+ any preference on a type of cuisine
+
+ start dialog api call spanish paris four expensive
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation with italian cuisine for four people in rome
+ i'm on it
+ with italian food
+ how many people would be in your party
+ in rome
+ ok let me look into some options for you
+ for four people please
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation
+ i'm on it
+ can you book a table in a expensive price range with spanish cuisine in paris for four people
+ where should it be
+ i love spanish food
+ ok let me look into some options for you
+ in a expensive price range please
+ ok let me look into some options for you
+
+ start dialog api call british madrid eight expensive
+ hi
+ hello what can i help you with today
+ can you book a table for eight people
+ i'm on it
+ can you book a table for eight people
+ any preference on a type of cuisine
+ with british food
+ any preference on a type of cuisine
+ with british food
+ ok let me look into some options for you
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation for eight people
+ i'm on it
+ with british food
+ any preference on a type of cuisine
+ in madrid
+ which price range are looking for
+ in madrid
+ ok let me look into some options for you
+
+ start dialog api call indian bombay four cheap
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation for four people in bombay
+ i'm on it
+ with french british
+ any preference on a type of cuisine
+ bombay
+ ok let me look into some options for you
+ bombay please
+ ok let me look into some options for you
+ hi
+ hello what can i help you with today
+ can you book a table with indian cuisine
+ i'm on it
+ can you book a table with indian cuisine
+ how many people would be in your party
+ with british food
+ how many people would be in your party
+ for four people please
+ which price range are looking for
+
+ start dialog api call italian london six moderate
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation in paris for eight people
+ i'm on it
+ i love french food
+ where should it be
+ with french cuisine
+ which price range are looking for
+ in paris
+ ok let me look into some options for you
+ hi
+ hello what can i help you with today
+ can you book a table for six people in a moderate price range in london with italian food
+ i'm on it
+ i love italian food
+ ok let me look into some options for you
+ in london
+ ok let me look into some options for you
+ i will be six
+ ok let me look into some options for you
+
+ start dialog api call french paris two expensive
+ hello
+ hello what can i help you with today
+ can you book a table for six people in a cheap price range in bombay
+ i'm on it
+ i love italian food
+ where should it be
+ with british cuisine
+ ok let me look into some options for you
+ in bombay
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ can you book a table
+ i'm on it
+ can you book a table in paris with french food for two people in a expensive price range
+ how many people would be in your party
+ i love french food
+ ok let me look into some options for you
+ i love french food
+ ok let me look into some options for you
+
+ start dialog api call italian madrid four cheap
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation with british food
+ i'm on it
+ can you book a table with british cuisine in a cheap price range
+ how many people would be in your party
+ in a cheap price range please
+ which price range are looking for
+ for four people please
+ ok let me look into some options for you
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation in madrid in a cheap price range
+ i'm on it
+ can you book a table with italian cuisine for four people
+ where should it be
+ with italian cuisine
+ ok let me look into some options for you
+ madrid please
+ ok let me look into some options for you
+
+ start dialog api call british paris six expensive
+ good morning
+ hello what can i help you with today
+ can you make a restaurant reservation for eight people
+ i'm on it
+ i love british food
+ any preference on a type of cuisine
+ with british food
+ which price range are looking for
+ with british food
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ may i have a table in paris for six people
+ i'm on it
+ can you book a table for six in paris
+ where should it be
+ with british food
+ ok let me look into some options for you
+ we will be six
+ ok let me look into some options for you
+
+ start dialog api call french bombay eight cheap
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in a moderate price range
+ i'm on it
+ can you make a restaurant reservation with french cuisine in a moderate price range in madrid
+ i'm on it
+ with french cuisine
+ ok let me look into some options for you
+ in madrid
+ ok let me look into some options for you
+ hello
+ hello what can i help you with today
+ may i have a table for eight people with french food in a cheap price range in bombay
+ i'm on it
+ with french food
+ ok let me look into some options for you
+ bombay please
+ ok let me look into some options for you
+ for eight please
+ ok let me look into some options for you
+
+ start dialog api call indian london two cheap
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation for two people
+ i'm on it
+ can you book a table with spanish cuisine for two people
+ any preference on a type of cuisine
+ i love spanish food
+ ok let me look into some options for you
+ i love be two
+ ok let me look into some options for you
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in london for two people with indian food
+ i'm on it
+ i love indian food
+ how many people would be in your party
+ in london
+ ok let me look into some options for you
+ for two people please
+ ok let me look into some options for you
+
+ start dialog api call french rome eight expensive
+ hi
+ hello what can i help you with today
+ may i have a table for four in paris with british cuisine
+ i'm on it
+ i like to book a table with british food
+ which price range are looking for
+ i love british food
+ ok let me look into some options for you
+ in a moderate price range please
+ ok let me look into some options for you
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation with french food for eight
+ i'm on it
+ with french food
+ where should it be
+ in rome
+ how many people would be in your party
+ for eight people please
+ ok let me look into some options for you
+
+ start dialog api call indian paris two expensive
+ hi
+ hello what can i help you with today
+ can you make a restaurant reservation in london for two people in a cheap price range
+ i'm on it
+ i love british food
+ where should it be
+ in london
+ ok let me look into some options for you
+ in london
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ may i have a table with indian cuisine
+ i'm on it
+ can you book a table with indian cuisine
+ how many people would be in your party
+ in paris
+ how many people would be in your party
+ we will be two
+ which price range are looking for
+
+ start dialog api call italian paris four expensive
+ hello
+ hello what can i help you with today
+ can you make a restaurant reservation with spanish cuisine in bombay in a expensive price range
+ i'm on it
+ with spanish food
+ how many people would be in your party
+ bombay please
+ which price range are looking for
+ for eight people please
+ ok let me look into some options for you
+ good morning
+ hello what can i help you with today
+ may i have a table for four in a expensive price range
+ i'm on it
+ can you book a table
+ any preference on a type of cuisine
+ with italian cuisine
+ any preference on a type of cuisine
+ with italian cuisine
+ ok let me look into some options for you
