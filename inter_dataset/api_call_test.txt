@@ -1,0 +1,282 @@
+1 api_call french london four cheap
+
+1 api_call spanish london four moderate
+
+1 api_call british madrid eight cheap
+
+1 api_call indian bombay four moderate
+
+1 api_call indian london four moderate
+
+1 api_call spanish london two moderate
+
+1 api_call british london two expensive
+
+1 api_call indian bombay two expensive
+
+1 api_call spanish madrid four moderate
+
+1 api_call british bombay four moderate
+
+1 api_call indian bombay two cheap
+
+1 api_call indian madrid four moderate
+
+1 api_call spanish paris two moderate
+
+1 api_call indian london two moderate
+
+1 api_call spanish london two cheap
+
+1 api_call italian rome two moderate
+
+1 api_call british rome eight expensive
+
+1 api_call spanish london six moderate
+
+1 api_call indian bombay six moderate
+
+1 api_call british rome four moderate
+
+1 api_call spanish rome four moderate
+
+1 api_call spanish bombay six expensive
+
+1 api_call italian london eight expensive
+
+1 api_call italian madrid two cheap
+
+1 api_call british rome four expensive
+
+1 api_call spanish bombay four moderate
+
+1 api_call french bombay six cheap
+
+1 api_call indian london two expensive
+
+1 api_call french bombay six moderate
+
+1 api_call french london six moderate
+
+1 api_call indian rome six expensive
+
+1 api_call italian london four cheap
+
+1 api_call indian london six expensive
+
+1 api_call italian madrid four expensive
+
+1 api_call french madrid four cheap
+
+1 api_call italian bombay four cheap
+
+1 api_call british rome eight cheap
+
+1 api_call spanish rome four expensive
+
+1 api_call italian bombay two cheap
+
+1 api_call spanish madrid four cheap
+
+1 api_call french rome four cheap
+
+1 api_call italian madrid eight cheap
+
+1 api_call italian rome eight expensive
+
+1 api_call french rome four moderate
+
+1 api_call indian london eight cheap
+
+1 api_call spanish madrid eight cheap
+
+1 api_call british paris eight expensive
+
+1 api_call french paris two cheap
+
+1 api_call italian paris eight expensive
+
+1 api_call spanish london four cheap
+
+1 api_call indian rome two moderate
+
+1 api_call british bombay two cheap
+
+1 api_call italian rome four expensive
+
+1 api_call british london eight moderate
+
+1 api_call british bombay four expensive
+
+1 api_call french paris eight moderate
+
+1 api_call italian bombay six cheap
+
+1 api_call british london four cheap
+
+1 api_call british paris eight moderate
+
+1 api_call french madrid four moderate
+
+1 api_call spanish madrid two moderate
+
+1 api_call british paris four moderate
+
+1 api_call british london two cheap
+
+1 api_call spanish bombay eight expensive
+
+1 api_call french london two cheap
+
+1 api_call italian paris six expensive
+
+1 api_call italian paris six cheap
+
+1 api_call italian bombay eight moderate
+
+1 api_call british madrid six cheap
+
+1 api_call italian paris six moderate
+
+1 api_call french madrid eight expensive
+
+1 api_call french rome four expensive
+
+1 api_call spanish rome eight expensive
+
+1 api_call spanish paris six cheap
+
+1 api_call spanish bombay six moderate
+
+1 api_call italian rome four cheap
+
+1 api_call spanish london eight moderate
+
+1 api_call spanish madrid two expensive
+
+1 api_call french london four moderate
+
+1 api_call indian paris four cheap
+
+1 api_call spanish paris eight cheap
+
+1 api_call italian rome six cheap
+
+1 api_call british madrid eight moderate
+
+1 api_call french bombay six expensive
+
+1 api_call indian london six cheap
+
+1 api_call italian london four moderate
+
+1 api_call spanish rome four cheap
+
+1 api_call french madrid eight moderate
+
+1 api_call italian bombay six moderate
+
+1 api_call indian madrid four expensive
+
+1 api_call french madrid six expensive
+
+1 api_call british bombay six cheap
+
+1 api_call british madrid two moderate
+
+1 api_call italian paris two moderate
+
+1 api_call spanish paris six expensive
+
+1 api_call spanish london two expensive
+
+1 api_call french london six expensive
+
+1 api_call italian bombay eight cheap
+
+1 api_call british madrid four moderate
+
+1 api_call italian bombay four expensive
+
+1 api_call italian madrid two expensive
+
+1 api_call italian bombay four moderate
+
+1 api_call british madrid six expensive
+
+1 api_call british paris four expensive
+
+1 api_call spanish london six expensive
+
+1 api_call indian paris four expensive
+
+1 api_call french london six cheap
+
+1 api_call french bombay eight moderate
+
+1 api_call spanish rome six cheap
+
+1 api_call indian bombay six cheap
+
+1 api_call indian rome six moderate
+
+1 api_call british rome eight moderate
+
+1 api_call spanish london six cheap
+
+1 api_call indian madrid two expensive
+
+1 api_call indian madrid six expensive
+
+1 api_call british paris six moderate
+
+1 api_call spanish paris four expensive
+
+1 api_call british madrid eight expensive
+
+1 api_call indian bombay four cheap
+
+1 api_call italian london six moderate
+
+1 api_call french paris two expensive
+
+1 api_call italian madrid four cheap
+
+1 api_call british paris six expensive
+
+1 api_call french bombay eight cheap
+
+1 api_call indian london two cheap
+
+1 api_call french rome eight expensive
+
+1 api_call indian paris two expensive
+
+1 api_call italian paris four expensive
+
+1 api_call italian london four expensive
+
+1 api_call indian madrid six cheap
+
+1 api_call french madrid two expensive
+
+1 api_call italian london eight moderate
+
+1 api_call french rome two moderate
+
+1 api_call british rome two moderate
+
+1 api_call italian paris four moderate
+
+1 api_call indian madrid eight moderate
+
+1 api_call italian madrid six moderate
+
+1 api_call british london two moderate
+
+1 api_call indian paris four moderate
+
+1 api_call british paris two cheap
+
+1 api_call italian rome two expensive
+

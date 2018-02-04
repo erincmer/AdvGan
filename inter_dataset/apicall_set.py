@@ -1,4 +1,6 @@
 
+# Switch api_call to the beginning of the dialogue
+
 import numpy as np
 
 from keras.preprocessing.sequence import pad_sequences

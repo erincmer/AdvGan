@@ -74,7 +74,7 @@ class DiscSentence(object):
 
 
     def get_rewards(self,sess, x):
-        rewards = sess.run(self.pred_train_output_log,
+        rewards = sess.run(self.pred_train_output,
                            feed_dict={self.enc_inp: x})
         #print('get rewards')
         return rewards

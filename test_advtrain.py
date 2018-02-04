@@ -126,14 +126,14 @@ def create_networks(EMB_DIM,END_TOKEN,word_index):
                            headerSeq2Seq.MAX_SEQ_LENGTH,
                            word_index,"base3",
                            learning_rate=0.0004)
-    old_generator_s2 = Generator(EMB_DIM,
-                             headerSeq2Seq.BATCH_SIZE,
-                             EMB_DIM,
-                             headerSeq2Seq.HIDDEN_DIM,
-                             headerSeq2Seq.MAX_SEQ_LENGTH,
-                             headerSeq2Seq.REP_SEQ_LENGTH,
-                             headerSeq2Seq.START_TOKEN,
-                             END_TOKEN,"oldgen2")
+    #old_generator_s2 = Generator(EMB_DIM,
+    #                         headerSeq2Seq.BATCH_SIZE,
+    #                         EMB_DIM,
+    #                         headerSeq2Seq.HIDDEN_DIM,
+    #                         headerSeq2Seq.MAX_SEQ_LENGTH,
+    #                         headerSeq2Seq.REP_SEQ_LENGTH,
+    #                         headerSeq2Seq.START_TOKEN,
+    #                         END_TOKEN,"oldgen2")
 
     return generator_s1,discriminator_s1,baseline_s1,\
            generator_s2,discriminator_s2,baseline_s2,discriminator_s3,baseline_s3,\
@@ -201,6 +201,7 @@ def trainS1(gen1,disc1,base1,hist_s1,reply_s1,d_steps = 2,g_steps = 1,lr=0.00000
     teacher_forcing = False
 
     for ep in range(1):
+        start_time = time.time()
         # Train discriminator
         for d in range(d_steps):
             print("D step for S1 ===", d)
@@ -239,10 +240,12 @@ def trainS1(gen1,disc1,base1,hist_s1,reply_s1,d_steps = 2,g_steps = 1,lr=0.00000
 
                 # Training step
                 _, d_loss, d_acc, _ = disc1.train_step(sess, X_d, label_d)
-            print("Discriminator loss = ", d_loss,"Discriminator accuracy = ",d_acc)
+        duration = start_time - time.time()
+        print("Discriminator loss = ", d_loss," Discriminator accuracy = ",d_acc, " Time: ", str(datetime.now().time()), " Duration: ", duration)
 
         
         # Update baseline after reward updata
+        start_time = time.time()
         for d in range(d_steps):
             print("B step for S1 ==== ", d)
             for _ in range(3): 
@@ -261,10 +264,12 @@ def trainS1(gen1,disc1,base1,hist_s1,reply_s1,d_steps = 2,g_steps = 1,lr=0.00000
                 # Train step
                 print("Training baseline ...")
                 b_loss = base1.train(sess, X, sentence, word_index, rewards)
-            print("Baseline loss = ", b_loss)
+       duration = start_time - time.time()
+       print("Baseline loss = ", b_loss," Time: ", str(datetime.now().time()), " Duration: ", duration)
 
         # Adversarial training gen1
         gen1.assign_lr(sess, lr)
+        start_time = time.time()
         for g in range(g_steps):
             print("G step for S1 ==== ", g)
             for j in range(0, hist_s1.shape[0] // headerSeq2Seq.BATCH_SIZE):
@@ -282,10 +287,14 @@ def trainS1(gen1,disc1,base1,hist_s1,reply_s1,d_steps = 2,g_steps = 1,lr=0.00000
                 
                 # Train step
                 _, adv_loss = gen1.advtrain_step(sess, X, sentence, sentence, rewards, b)
-            print("Generator loss = ", adv_loss)
+            
+        duration = start_time - time.time()
+        print("Generator loss = ", adv_loss," Time: ", str(datetime.now().time()), " Duration: ", duration)
+
 
         # Compute cummulative reward on one epoch of generated sentence
         gen_rew = 0
+        start_time = time.time()
         for ii in range(hist_s1.shape[0] // headerSeq2Seq.BATCH_SIZE):
             X = hist_s1[ii * headerSeq2Seq.BATCH_SIZE:(ii + 1) * headerSeq2Seq.BATCH_SIZE, :]
             Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH)) * word_index['eos']
@@ -293,29 +302,17 @@ def trainS1(gen1,disc1,base1,hist_s1,reply_s1,d_steps = 2,g_steps = 1,lr=0.00000
             X_d = toolsSeq2Seq.concat_hist_reply(X, sentence_test, word_index)
             temp_rew = disc1.get_rewards(sess, X_d)
             gen_rew = gen_rew + np.sum(temp_rew[:,1])
-        print("Cummulative reward = ", genRew)
+        
+        duration = start_time - time.time()
+        print("Cummulative reward = ", genRew," Time: ", str(datetime.now().time()), " Duration: ", duration)
 
-    total_correct = 0
-    total_wrong = 0
-    for ii in range(hist_s1.shape[0] // headerSeq2Seq.BATCH_SIZE):
-        X = hist_s1[ii * headerSeq2Seq.BATCH_SIZE:(ii + 1) * headerSeq2Seq.BATCH_SIZE, :]
-
-        Y = np.ones((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.REP_SEQ_LENGTH)) * word_index['eos']
-        Y_train = reply_s1[ii * headerSeq2Seq.BATCH_SIZE:(ii + 1) * headerSeq2Seq.BATCH_SIZE, :]
-
-        gen_proba_test, sentence_test = gen1.test_generate(sess, X, Y)
-
-        total_correct = total_correct + np.sum(sentence_test == Y_train)
-        total_wrong = total_wrong + np.sum(sentence_test != Y_train)
-
-    print("Correct Words for Train === ", total_correct," Wrong Words for Train ======== ", total_wrong, " Time == ", str(datetime.now().time()))
 
     # Save model after one epoch adv training
     disc1.save_model(sess, savepathD_S1)
     base1.save_model(sess,'BaselineModel/S1/')
     gen1.save_model(sess,'GeneratorModel/S1/Reinforce/')
    
-    return gen_rew, d_acc, total_wrong, total_correct
+    return gen_rew, d_acc
 
 
 
@@ -1077,8 +1074,7 @@ END_TOKEN = word_index.get("eos")
         disc2,
         base2,
         disc3,
-        base3, 
-        old_gen2) = create_networks(EMB_DIM,END_TOKEN,word_index)
+        base3) = create_networks(EMB_DIM,END_TOKEN,word_index)
 
 # TF setting
 config = tf.ConfigProto()
@@ -1089,7 +1085,7 @@ gen1.assign_emb(sess, embedding_matrix)
 disc1.assign_emb(sess, embedding_matrix)
 base1.assign_emb(sess,embedding_matrix)
 gen2.assign_emb(sess, embedding_matrix)
-old_gen2.assign_emb(sess, embedding_matrix)
+#old_gen2.assign_emb(sess, embedding_matrix)
 disc2.assign_emb(sess, embedding_matrix)
 base2.assign_emb(sess,embedding_matrix)
 disc3.assign_emb(sess, embedding_matrix)
@@ -1157,21 +1153,15 @@ gen2.restore_model(sess,savepathG_S2_Seq2Seq)
 
 discAcc = []
 genRew = []
-wrongCount1 = []
-goodCount = []
 
 for ep in range(100):
-    gen_rew, disc_acc, total_wrong, total_correct = trainS1(gen1,disc1,base1,hist_s1,reply_s1,d_steps=1,g_steps=1)
+    gen_rew, disc_acc = trainS1(gen1,disc1,base1,hist_s1,reply_s1,d_steps=1,g_steps=1)
     
     discAcc.append(disc_acc)
     genRew.append(gen_rew)
-    wrongCount1.append(total_wrong)
-    goodCount.append(total_correct)
 
     np.savetxt("discAcc.csv", np.array(discAcc))
     np.savetxt("genRew.csv", np.array(genRew))
-    np.savetxt("wrongCount1.csv", np.array(wrongCount1))
-    np.savetxt("goodCount.csv", np.array(goodCount))
 
     testS1_onTest(gen1,gen2,test_hist_s1, ep)
 
