@@ -41,7 +41,6 @@ def convert_sentence_to_text(ids,word_index):
     for i in ids:
         if i!=0  and i!= word_index["eos"] and i!=word_index['eoh']:
             sen = sen +" " +list(word_index.keys())[list(word_index.values()).index(i)]
-    print(sen)
     return sen
 
 def convert_id_reward_to_text(ids,rewards,d_rewards,b,word_index):
@@ -85,25 +84,49 @@ def concat_hist_reply( histories, replies, word_index):
     return disc_inp
 
 def concat_hist_new( histories, replies, word_index):
+    """
+    Concat history and reply to make a new history (i.e. put eoh after the
+    reply)
+    Args:
+        histories: (end with eoh that you must get rid of)
+        replies: replies
+        word_index: token:index dictionnary
+    """
     disc_inp = np.full((headerSeq2Seq.BATCH_SIZE, headerSeq2Seq.MAX_SEQ_LENGTH), word_index['eos'])
-
+    
+    #print("eoh: ", word_index['eoh'])
+    #print("eos: ", word_index['eos'])
     counter = 0
     for h, r in zip(histories, replies):
         i = 0
         while h[i] != word_index['eoh']:
             disc_inp[counter, i] = h[i]
             i = i + 1
+        
+        disc_inp[counter, i + 1:i + np.sum(r!=word_index['eos'])+1] = r[r!=word_index['eos']]
+        disc_inp[counter, i + np.sum(r!=word_index['eos'])+1] = word_index['eoh']
+
+        #print("first eoh at : ", i)
+        #print("history: ", h)
+
+        #ieos = 0
+        #print("replies: ", r)
+        #while ieos < 20 and r[ieos] !=  word_index['eos']:
+        #    ieos+=1
+
+        #print("first eos at : ", ieos)
+        #input("wait")
 
         #disc_inp[counter, i] = word_index['eoh']
-
-        disc_inp[counter, i + 1:i + 21] = r
-        disc_inp[counter, i + 21] = word_index['eoh']
+        #disc_inp[counter, i : i+ieos] = r[:ieos]
+        #disc_inp[counter, i + i+ieos] = word_index['eoh']
         counter = counter + 1
 
     return disc_inp
 
 
-def EOD(sentence, over_lines, word_index, word_term="api_call"):
+#def EOD(sentence, over_lines, word_index, word_term="api_call"):
+def EOD(sentence, word_index, word_term="api"):
     """
     Compute whether a sentence is the end of the dialogue.
     Based on the api_call criteria. If you use another criteria, change the
@@ -116,18 +139,40 @@ def EOD(sentence, over_lines, word_index, word_term="api_call"):
         word_term: Word on which termination is defined (default: api_call
     """
     
-    # Get the lines where there is word_term
+    # Get the lines where there starting with api call
     # tmp > 0 for these lines
-    tmp = np.sum(sentence==word_index.get(word_term), axis=1)
+    is_api = (sentence[:,0] == word_index.get("api"))
+    is_call = (sentence[:,1] == word_index.get("call"))
+
+    is_over = is_api * is_call
 
     # Get the index of the lines for which tmp>0
     ind = np.arange(headerSeq2Seq.BATCH_SIZE)
-    over_ind = ind[tmp > 0]
+    over_ind = ind[is_over]
+    
+    # DEBUG
+    #for i in over_ind:
+    #    print("i: ", i)
+    #    print(convert_sentence_to_text(sentence[int(i),:], word_index))
+    #    input("wait")
+        
+    return over_ind
 
-    # Set over_lines to 1 for these index
-    over_lines[over_ind] = 1
+    ## Get the lines where there is call
+    ## tmp > 0 for these lines
+    #tmp_call = np.sum(sentence==word_index.get("call"), axis=1)
 
-    return over_lines
+    ## Get the index of the lines for which tmp>0
+    #ind_call = np.arange(headerSeq2Seq.BATCH_SIZE)
+    #over_ind_call = ind_call[tmp_call > 0]
+
+    ## Get the lines both having api and call
+
+    ## Set over_lines to 1 for these index
+    #over_lines = np.zeros(headerSeq2Seq.BATCH_SIZE, dtype=np.int)
+    #over_lines[over_ind] = 1
+
+    #return over_lines
 
 
 def concat_hist_reply_over(histories, replies, word_index, over_lines):
@@ -199,3 +244,50 @@ def save_to_file(filename, ids,word_index):
                 sen = sen +" " +list(word_index.keys())[list(word_index.values()).index(i)]
         f.write(sen + '\n')
 
+def compute_rewards(sen2_exp, sen2, mode):
+
+    # Reward = 0 if apicall_exp is included in api_call
+    # No order restriction
+    if mode==1:
+        apicall = sen2[:,0:6]
+        apicall_exp = sen2_exp[:,2:8]
+
+        print("Expected api call: ", apicall[0,:])
+        print("api call: ", apicall_exp[0,:])
+
+        rewards = np.zeros(headerSeq2Seq.BATCH_SIZE)
+        for i in range(rewards.shape[0]):
+            correct_apicall = np.in1d(apicall[i,:], apicall_exp[i,:])
+            num_correct = np.sum(correct_apicall)
+            if num_correct > 0:
+                rewards[i] = 1
+
+        return rewards
+
+    ## Reward = 0 if apicall_exp is equal  in api_call
+    ## No order restricition
+    elif mode==2:
+        apicall = sen2[:,0:6]
+        apicall_exp = sen2_exp[:,2:8]
+
+        rewards = np.zeros(headerSeq2Seq.BATCH_SIZE)
+        for i in range(rewards.shape[0]):
+            correct_apicall = np.in1d(apicall[i,:], apicall_exp[i,:])
+            num_correct = np.sum(correct_apicall)
+            if num_correct == apicall[i,:].shape[0] :
+                rewards[i] = 1
+        
+        return rewards
+
+    ## Reward is the ratio bet
+    elif mode == 3:
+        apicall = sen2[:,0:6]
+        apicall_exp = sen2_exp[:,2:8]
+
+        rewards = np.zeros(headerSeq2Seq.BATCH_SIZE)
+        for i in range(rewards.shape[0]):
+            correct_apicall = np.in1d(apicall[i,:], apicall_exp[i,:])
+            num_correct = np.sum(correct_apicall)
+            rewards[i] = num_correct / apicall[i,:].shape[0]
+
+        return rewards
